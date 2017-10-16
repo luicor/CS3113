@@ -45,7 +45,8 @@ GLuint LoadTexture(const char *filePath) {
 
 class Vector3 {
 public:
-    Vector3(float x, float y, float z);
+    Vector3(){}
+    Vector3(float x1, float y1, float z1) : x(x1), y(y1), z(z1) {}
     float x;
     float y;
     float z;
@@ -53,7 +54,7 @@ public:
 
 class SheetSprite {
 public:
-    SheetSprite();
+    SheetSprite(){}
     SheetSprite(GLuint tID, float uCoord, float vCoord, float w, float h, float s) :
         textureID(tID), u(uCoord), v(vCoord), width(w), height(h), size(s) {};
     
@@ -144,7 +145,7 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 
 class Entity {
 public:
-    Entity();
+    Entity(){}
     void Draw(ShaderProgram* program) {
         sprite.Draw(program);
     }
@@ -158,6 +159,7 @@ public:
 
 class GameState {
 public:
+    GameState(){}
     Entity player;
     Entity enemies[12];
     Entity bullets[MAX_BULLETS];
@@ -252,8 +254,6 @@ void UpdateGameLevel(GameState state, float elapsed){
     for(int i = 0; i < 12; ++i) {
         if(state.enemies[i].DoA == true) {
             state.enemies[i].position.x += enemies[i].direction.x * elapsed * enemies[i].velocity.x;
-            enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
-            
             //Have them go opposite direction when hitting edge of screen and collision
             if(state.enemies[i].position.x < -3.55 + (state.enemies[i].size.x/2)) {
                 enemies[i].direction.x *= -1;
@@ -262,7 +262,19 @@ void UpdateGameLevel(GameState state, float elapsed){
                 float w2 = 0.2;
                 float penetration = fabs(xDistance - w1/2 - w2/2);
                 enemies[i].position.x += penetration + 0.1;
+                state.enemies[i].position.y -= .05;
             }
+            
+            if (state.enemies[i].position.x > 3.55 + (state.enemies[i].size.x/2)){
+                enemies[i].direction.x *= -1;
+                float xDistance = state.enemies[i].position.x - 3.55;
+                float w1 = state.enemies[i].size.y;
+                float w2 = 0.2;
+                float penetration = fabs(xDistance - w1/2 - w2/2);
+                enemies[i].position.x += penetration + 0.1;
+                state.enemies[i].position.y -= .05;
+            }
+            enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
         }
     }
     
@@ -281,8 +293,25 @@ void UpdateGameLevel(GameState state, float elapsed){
             
             if(enemyTop > bulletBottom && enemyBottom < bulletTop && enemyRight > bulletLeft && enemyLeft < bulletRight) {
                 state.enemies[i].DoA = false;
-                enemyModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);//Move dead enemy away from screen
+                enemyModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
             }
+        }
+    }
+    
+    float playerRight = state.player.position.x + (state.player.size.x/2);
+    float playerLeft = state.player.position.x - (state.player.size.x/2);
+    float playerTop = state.player.position.y + (state.player.size.y/2);
+    float playerBottom = state.player.position.y - (state.player.size.y/2);
+    //enemy to player collision handler
+    for(int i = 0; i < 12; ++i) {
+        float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
+        float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
+        float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
+        float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
+        
+        if(enemyTop > playerBottom && enemyBottom < playerTop && enemyRight > playerLeft && enemyLeft < playerRight){
+            //Player loses goes to main menu
+            mode = STATE_MAIN_MENU;
         }
     }
 }
@@ -290,13 +319,15 @@ void UpdateGameLevel(GameState state, float elapsed){
 void RenderMainMenu(ShaderProgram* program){
     Matrix modelviewMatrix;
     Matrix modelviewMatrix2;
+    modelviewMatrix.Identity();
+    modelviewMatrix2.Identity();
     modelviewMatrix.Translate(-3.0, 1.5, 0.0);
     modelviewMatrix2.Translate(-1.2, -1.5, 0.0);
     program->SetModelviewMatrix(modelviewMatrix);
     GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
     DrawText(program, fontTexture, "Space Invaders", 0.8f, 0.0f);
     program->SetModelviewMatrix(modelviewMatrix2);
-    DrawText(program, fontTexture, "Press Start to Begin", 0.4f, 0.0f);
+    DrawText(program, fontTexture, "Press Start to Begin", 0.3f, 0.0f);
 }
 
 void RenderGameLevel(GameState& state){
@@ -387,7 +418,7 @@ int main(int argc, char *argv[])
     projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
     
     GLuint spriteSheet = LoadTexture(RESOURCE_FOLDER"sheet.png");
-    SheetSprite playerTexture(spriteSheet, 425.0f/1024.0f, 468.0f/1024.0f, 93.0f/1024.0f, 84.0f/1024.0f, 0.5f);
+    SheetSprite playerTexture(spriteSheet, 310.0f/1024.0f, 907.0f/1024.0f, 98.0f/1024.0f, 75.0f/1024.0f, 0.5f);
     float playerWidth = 0.5 * playerTexture.size * (playerTexture.width / playerTexture.height) * 2;
     float playerHeight = 0.5 * playerTexture.size * 2;
     //set up player
@@ -416,7 +447,7 @@ int main(int argc, char *argv[])
         state.bullets[i] = bullets[i];
     }
     //set up enemies
-    SheetSprite enemyTexture(spriteSheet,346.0f/1024.0f, 150.0f/1024.0f, 97.0f/1024.0f, 84.0f/1024.0f, 0.3f);
+    SheetSprite enemyTexture(spriteSheet,425.0f/1024.0f, 384.0f/1024.0f, 93.0f/1024.0f, 84.0f/1024.0f, 0.3f);
     float enemyWidth = 0.5f * enemyTexture.size * (enemyTexture.width / enemyTexture.height) * 2;
     float enemyHeight = 0.5f * enemyTexture.size * 2;
     int initialPos = -2;

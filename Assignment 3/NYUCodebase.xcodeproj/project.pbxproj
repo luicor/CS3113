@@ -26,6 +26,7 @@
 /* Begin PBXFileReference section */
 		6C15B0CC1F946C7600D5B32D /* pixel_font.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = pixel_font.png; path = "../../../CS3113-Class/assets/fonts/pixel_font.png"; sourceTree = "<group>"; };
 		6C15B0CD1F94893900D5B32D /* sheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = sheet.png; path = "../../../../../Library/Developer/Xcode/DerivedData/NYUCodebase-bktcdxhvedtlktdzvqinvlvwudzb/Build/Products/Debug/NYUCodebase.app/Contents/Resources/sheet.png"; sourceTree = "<group>"; };
+		6C15B0CE1F94901F00D5B32D /* Vector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector.h; path = ../../../../../Desktop/Archive/NYUCodebase/Vector.h; sourceTree = "<group>"; };
 		6D5A86AA19AE5C710066C1FD /* NYUCodebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYUCodebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5A86AD19AE5C710066C1FD /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		6D5A86B019AE5C710066C1FD /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -150,6 +151,7 @@
 				6DE9D2F01BA6AB8C002D599C /* fragment_textured.glsl */,
 				6DC707691BA7273500225B7D /* vertex_textured.glsl */,
 				6DEF23BC1B96CC2600BCE792 /* Matrix.cpp */,
+				6C15B0CE1F94901F00D5B32D /* Vector.h */,
 				6DEF23BD1B96CC2600BCE792 /* Matrix.h */,
 				6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */,
 				6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */,

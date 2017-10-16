@@ -28,6 +28,8 @@ ShaderProgram::ShaderProgram(const char *vertexShaderFile, const char *fragmentS
     
 }
 
+ShaderProgram::ShaderProgram() {};
+
 ShaderProgram::~ShaderProgram() {
     glDeleteProgram(programID);
     glDeleteShader(vertexShader);
