@@ -37,8 +37,8 @@ GLuint LoadTexture(const char *filePath) {
     glGenTextures(1, &retTexture);
     glBindTexture(GL_TEXTURE_2D, retTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     stbi_image_free(image);
     return retTexture;
 }
@@ -170,308 +170,368 @@ public:
 GameMode mode = STATE_MAIN_MENU;
 GameState state;
 
-Matrix playerModelViewMatrix;
-Matrix enemyModelViewMatrix[12];
-Matrix bulletModelViewMatrix[MAX_BULLETS];
+//Matrix playerModelViewMatrix;
+//Matrix enemyModelViewMatrix[12];
+//Matrix bulletModelViewMatrix[MAX_BULLETS];
+//
+//int bulletIndex;
+//Entity bullets[MAX_BULLETS];
+//Entity enemies[12];
+//int score = 0;
+//int prevScore = 0;
 
-int bulletIndex;
-Entity bullets[MAX_BULLETS];
-Entity enemies[12];
-int score = 0;
-int prevScore = 0;
+//void shootBullet(){
+//    state.bullets[bulletIndex].position.x = state.player.position.x;
+//    state.bullets[bulletIndex].position.y = state.player.position.y;
+//    ++bulletIndex;
+//
+//    if(bulletIndex > MAX_BULLETS - 1) {
+//        bulletIndex = 0;
+//    }
+//}
+//
+//void ProcessMainMenuInput(){
+//    SDL_Event event;
+//    while (SDL_PollEvent(&event)) {
+//        if (event.type == SDL_KEYDOWN){
+//            if(event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+//                mode = STATE_GAME_LEVEL;
+//            }
+//        }
+//    }
+//}
+//
+//void ProcessGameLevelInput(GameState& state) {
+//    int numEnemiesDead = 0;
+//
+//    //Check to see how many enemies have been defeated
+//    for(int i = 0; i < 12; ++i) {
+//        if(state.enemies[i].DoA == false) {
+//            ++numEnemiesDead;
+//        }
+//    }
+//
+//    score = numEnemiesDead + prevScore;
+//
+//    //Reset enemies when all dead
+//    if(numEnemiesDead == 12) {
+//        int initialPos = -2;
+//        for(int i = 0; i < 12; ++i) {
+//            state.enemies[i].DoA = true;
+//            state.enemies[i].position.x = (initialPos + i/3.55) * 1.2;
+//            state.enemies[i].position.y = i/6;
+//            state.enemies[i].direction = Vector3(1.0f,0.0f,0.0f);
+//        }
+//    }
+//}
+//
+//void UpdateMainMenu(float elapsed){
+//    //Just Have this for future additions. Don't need to actually update main menu
+//}
+//
+//void UpdateGameLevel(GameState state, float elapsed){
+//    const Uint8 *keys = SDL_GetKeyboardState(NULL);
+//    //Controls for ship
+//    if(keys[SDL_SCANCODE_A]) {
+//        if(state.player.position.x > -3.55) {
+//            state.player.position.x -= elapsed * 1.3f;;
+//        }
+//        playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
+//    }
+//    else if(keys[SDL_SCANCODE_D]) {
+//        if(state.player.position.x < 3.55) {
+//            state.player.position.x += elapsed * 1.3f;;
+//        }
+//        playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
+//    }
+//    //Move bullets that are shot
+//    for(int i = 0; i < MAX_BULLETS; ++i) {
+//        state.bullets[i].position.y += elapsed * bullets[bulletIndex].velocity.y;
+//        bulletModelViewMatrix[i].SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
+//    }
+//
+//    //Move enemies
+//    for(int i = 0; i < 12; ++i) {
+//        if(state.enemies[i].DoA == true) {
+//            state.enemies[i].position.x += enemies[i].direction.x * elapsed * enemies[i].velocity.x;
+//            //Have them go opposite direction when hitting edge of screen and collision
+//            if(state.enemies[i].position.x < -3.55 + (state.enemies[i].size.x/2)) {
+//                enemies[i].direction.x *= -1;
+//                float xDistance = state.enemies[i].position.x - 3.55;
+//                float w1 = state.enemies[i].size.y;
+//                float w2 = 0.2;
+//                float penetration = fabs(xDistance - w1/2 - w2/2);
+//                enemies[i].position.x += penetration + 0.1;
+//                state.enemies[i].position.y -= .05;
+//            }
+//
+//            if (state.enemies[i].position.x > 3.55 + (state.enemies[i].size.x/2)){
+//                enemies[i].direction.x *= -1;
+//                float xDistance = state.enemies[i].position.x - 3.55;
+//                float w1 = state.enemies[i].size.y;
+//                float w2 = 0.2;
+//                float penetration = fabs(xDistance - w1/2 - w2/2);
+//                enemies[i].position.x += penetration + 0.1;
+//                state.enemies[i].position.y -= .05;
+//            }
+//            enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+//        }
+//    }
+//
+//    //Bullet collision handler
+//    for(int i = 0; i < 12; ++i) {
+//        for(int j = 0; j < MAX_BULLETS; ++j) {
+//            float bulletRight = state.bullets[j].position.x + (state.bullets[j].size.x/2);
+//            float bulletLeft = state.bullets[j].position.x - (state.bullets[j].size.x/2);
+//            float bulletBottom = state.bullets[j].position.y - (state.bullets[j].size.y/2);
+//            float bulletTop = state.bullets[j].position.y + (state.bullets[j].size.y/2);
+//
+//            float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
+//            float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
+//            float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
+//            float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
+//
+//            if(enemyTop > bulletBottom && enemyBottom < bulletTop && enemyRight > bulletLeft && enemyLeft < bulletRight) {
+//                state.enemies[i].DoA = false;
+//                enemyModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
+//            }
+//        }
+//    }
+//
+//    float playerRight = state.player.position.x + (state.player.size.x/2);
+//    float playerLeft = state.player.position.x - (state.player.size.x/2);
+//    float playerTop = state.player.position.y + (state.player.size.y/2);
+//    float playerBottom = state.player.position.y - (state.player.size.y/2);
+//    //enemy to player collision handler
+//    for(int i = 0; i < 12; ++i) {
+//        float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
+//        float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
+//        float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
+//        float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
+//
+//        if(enemyTop > playerBottom && enemyBottom < playerTop && enemyRight > playerLeft && enemyLeft < playerRight){
+//            //Player loses goes to main menu
+//            mode = STATE_MAIN_MENU;
+//        }
+//    }
+//}
+//
+//void RenderMainMenu(ShaderProgram* program){
+//    Matrix modelviewMatrix;
+//    Matrix modelviewMatrix2;
+//    modelviewMatrix.Identity();
+//    modelviewMatrix2.Identity();
+//    modelviewMatrix.Translate(-3.28, 1.5, 0.0);
+//    modelviewMatrix2.Translate(-1.95, -1.2, 0.0);
+//    program->SetModelviewMatrix(modelviewMatrix);
+//    glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//
+//    GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+//    DrawText(program, fontTexture, "Space Invaders", 0.5f, 0.0f);
+//    program->SetModelviewMatrix(modelviewMatrix2);
+//    DrawText(program, fontTexture, "Press Start to Begin", 0.2f, 0.0f);
+//}
+//
+//void RenderGameLevel(GameState& state){
+//    glClear(GL_COLOR_BUFFER_BIT);
+//    //Render Player
+//    Gprogram.SetModelviewMatrix(playerModelViewMatrix);
+//    state.player.Draw(&Gprogram);
+//
+//    //Render Bullets
+//    for(int i = 0; i < MAX_BULLETS; ++i) {
+//        Gprogram.SetModelviewMatrix(bulletModelViewMatrix[i]);
+//        state.bullets[i].sprite.Draw(&Gprogram);
+//    }
+//    //Render Enemies
+//    for(int i = 0; i < 12; ++i) {
+//        Gprogram.SetModelviewMatrix(enemyModelViewMatrix[i]);
+//        state.enemies[i].sprite.Draw(&Gprogram);
+//    }
+//
+//    //Render Score
+//    GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+//    Matrix scoreModelViewMatrix;
+//    scoreModelViewMatrix.Identity();
+//    scoreModelViewMatrix.Translate(3.0, 1.9, 0.0);
+//    Gprogram.SetModelviewMatrix(scoreModelViewMatrix);
+//    std::string currentScore = std::to_string(score);
+//    DrawText(&Gprogram, fontTexture, currentScore, 0.4, 0.0);
+//}
+//
+//void ProcessInput() {
+//    switch(mode){
+//        case STATE_MAIN_MENU:
+//            ProcessMainMenuInput();
+//            break;
+//        case STATE_GAME_LEVEL:
+//            ProcessGameLevelInput(state);
+//            break;
+//    }
+//}
+//
+//void Update(float elapsed){
+//    switch(mode){
+//        case STATE_MAIN_MENU:
+//            UpdateMainMenu(elapsed);
+//            break;
+//        case STATE_GAME_LEVEL:
+//            UpdateGameLevel(state,elapsed);
+//            break;
+//    }
+//}
+//
+//void Render(){
+//    switch (mode){
+//        case STATE_MAIN_MENU:
+//            RenderMainMenu(&Gprogram);
+//            break;
+//        case STATE_GAME_LEVEL:
+//            RenderGameLevel(state);
+//            break;
+//    }
+//}
 
-void shootBullet(){
-    state.bullets[bulletIndex].position.x = state.player.position.x;
-    state.bullets[bulletIndex].position.y = state.player.position.y;
-    ++bulletIndex;
-    
-    if(bulletIndex > MAX_BULLETS - 1) {
-        bulletIndex = 0;
-    }
-}
+//int main(int argc, char *argv[])
+//{
+//
+//    SDL_Init(SDL_INIT_VIDEO);
+//
+//    displayWindow = SDL_CreateWindow("My Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
+//
+//    SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
+//
+//    SDL_GL_MakeCurrent(displayWindow, context);
+//    ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
+//    Gprogram = program;
+//
+//    #ifdef _WINDOWS
+//        glewInit();
+//    #endif
+//
+//    glViewport(0, 0, 640, 360);
+//
+//    Matrix projectionMatrix;
+//    projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
+//
+//    GLuint spriteSheet = LoadTexture(RESOURCE_FOLDER"sheet.png");
+//    SheetSprite playerTexture(spriteSheet, 310.0f/1024.0f, 907.0f/1024.0f, 98.0f/1024.0f, 75.0f/1024.0f, 0.5f);
+//    float playerWidth = 0.5 * playerTexture.size * (playerTexture.width / playerTexture.height) * 2;
+//    float playerHeight = 0.5 * playerTexture.size * 2;
+//    //set up player
+//    Entity player;
+//    player.sprite = playerTexture;
+//    playerModelViewMatrix.Translate(0.0, -1.8, 0.0);
+//    player.position = Vector3(0, -1.8, 0.0);
+//    player.size = Vector3(playerWidth, playerHeight, 0.0f);
+//    state.player = player;
+//    //set up bullets
+//    SheetSprite bulletTexture(spriteSheet,835.0f/1024.0f, 752.0f/1024.0f, 13.0f/1024.0f, 37.0f/1024.0f, 0.2f);
+//    float bulletWidth = 0.5f * bulletTexture.size * (bulletTexture.width / bulletTexture.height) * 2;
+//    float bulletHeight = 0.5f * bulletTexture.size * 2;
+//    for(int i = 0; i < MAX_BULLETS; ++i) {
+//        bullets[i].position.x = -1000.0f;
+//        bullets[i].position.y = -1000.0f;
+//        bullets[i].sprite = bulletTexture;
+//        bullets[i].size.y = bulletHeight;
+//        bullets[i].size.x = bulletWidth;
+//        bullets[i].velocity = Vector3(0.0, 1.0, 0.0);
+//    }
+//    for(int i = 0; i < MAX_BULLETS; ++i) {
+//        bulletModelViewMatrix[i].Identity();
+//        bulletModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
+//
+//        state.bullets[i] = bullets[i];
+//    }
+//    //set up enemies
+//    SheetSprite enemyTexture(spriteSheet,425.0f/1024.0f, 384.0f/1024.0f, 93.0f/1024.0f, 84.0f/1024.0f, 0.3f);
+//    float enemyWidth = 0.5f * enemyTexture.size * (enemyTexture.width / enemyTexture.height) * 2;
+//    float enemyHeight = 0.5f * enemyTexture.size * 2;
+//    int initialPos = -2;
+//    for(int i = 0; i < 12; i++) {
+//        enemies[i].position.x = (initialPos + i/3.55) * 1.2;
+//        enemies[i].position.y = i/6;
+//        enemies[i].sprite = enemyTexture;
+//        enemies[i].size.x = enemyWidth;
+//        enemies[i].size.y = enemyHeight;
+//        enemies[i].velocity = Vector3(1.0, 0.0, 0.0);
+//        enemies[i].direction = Vector3(1.0, 0.0, 0.0);
+//        enemies[i].DoA = true;
+//
+//    }
+//    for (int i = 0; i < 12; ++i){
+//        enemyModelViewMatrix[i].Identity();
+//        enemyModelViewMatrix[i].SetPosition((initialPos + i/3.55)* 1.2, i/6, 0);
+//
+//        state.enemies[i] = enemies[i];
+//    }
+//
+//    float lastFrameTicks = 0.0f;
+//    float accumulator = 0.0f;
+//
+//    SDL_Event event;
+//    bool done = false;
+//    while (!done) {
+//        while (SDL_PollEvent(&event)) {
+//            if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+//                done = true;
+//            }
+//            if(event.type == SDL_KEYDOWN) {
+//                if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && mode == STATE_GAME_LEVEL) {
+//                    shootBullet();
+//                }
+//            }
+//        }
+//        glClear(GL_COLOR_BUFFER_BIT);
+//
+//        float ticks = (float)SDL_GetTicks()/1000.0f;
+//        float elapsed = ticks - lastFrameTicks;
+//        lastFrameTicks = ticks;
+//        elapsed += accumulator;
+//        if(elapsed < FIXED_TIMESTEP) {
+//            accumulator = elapsed;
+//            continue;
+//        }
+//        while(elapsed >= FIXED_TIMESTEP) {
+//            Update(FIXED_TIMESTEP);
+//            elapsed -= FIXED_TIMESTEP;
+//        }
+//
+//        glUseProgram(program.programID);
+//        program.SetProjectionMatrix(projectionMatrix);
+//
+//        Render();
+//        Update(elapsed);
+//        ProcessInput();
+//
+//
+//        SDL_GL_SwapWindow(displayWindow);
+//    }
+//
+//
+//    SDL_Quit();
+//    return 0;
+//}
 
-void ProcessMainMenuInput(){
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_KEYDOWN){
-            if(event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-                mode = STATE_GAME_LEVEL;
-            }
-        }
-    }
-}
+void mainMenu() {
+    ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 
-void ProcessGameLevelInput(GameState& state) {
-    int numEnemiesDead = 0;
-    
-    //Check to see how many enemies have been defeated
-    for(int i = 0; i < 12; ++i) {
-        if(state.enemies[i].DoA == false) {
-            ++numEnemiesDead;
-        }
-    }
-    
-    score = numEnemiesDead + prevScore;
-    
-    //Reset enemies when all dead
-    if(numEnemiesDead == 12) {
-        int initialPos = -2;
-        for(int i = 0; i < 12; ++i) {
-            state.enemies[i].DoA = true;
-            state.enemies[i].position.x = (initialPos + i/3.55) * 1.2;
-            state.enemies[i].position.y = i/6;
-            state.enemies[i].direction = Vector3(1.0f,0.0f,0.0f);
-        }
-    }
-}
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-void UpdateMainMenu(float elapsed){
-    //Just Have this for future additions. Don't need to actually update main menu
-}
+    glViewport(0, 0, 640, 360);
+    Matrix projectionMatrix;
+    projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
 
-void UpdateGameLevel(GameState state, float elapsed){
-    const Uint8 *keys = SDL_GetKeyboardState(NULL);
-    //Controls for ship
-    if(keys[SDL_SCANCODE_A]) {
-        if(state.player.position.x > -3.55) {
-            state.player.position.x -= elapsed * 1.3f;;
-        }
-        playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
-    }
-    else if(keys[SDL_SCANCODE_D]) {
-        if(state.player.position.x < 3.55) {
-            state.player.position.x += elapsed * 1.3f;;
-        }
-        playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
-    }
-    //Move bullets that are shot
-    for(int i = 0; i < MAX_BULLETS; ++i) {
-        state.bullets[i].position.y += elapsed * bullets[bulletIndex].velocity.y;
-        bulletModelViewMatrix[i].SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
-    }
-    
-    //Move enemies
-    for(int i = 0; i < 12; ++i) {
-        if(state.enemies[i].DoA == true) {
-            state.enemies[i].position.x += enemies[i].direction.x * elapsed * enemies[i].velocity.x;
-            //Have them go opposite direction when hitting edge of screen and collision
-            if(state.enemies[i].position.x < -3.55 + (state.enemies[i].size.x/2)) {
-                enemies[i].direction.x *= -1;
-                float xDistance = state.enemies[i].position.x - 3.55;
-                float w1 = state.enemies[i].size.y;
-                float w2 = 0.2;
-                float penetration = fabs(xDistance - w1/2 - w2/2);
-                enemies[i].position.x += penetration + 0.1;
-                state.enemies[i].position.y -= .05;
-            }
-            
-            if (state.enemies[i].position.x > 3.55 + (state.enemies[i].size.x/2)){
-                enemies[i].direction.x *= -1;
-                float xDistance = state.enemies[i].position.x - 3.55;
-                float w1 = state.enemies[i].size.y;
-                float w2 = 0.2;
-                float penetration = fabs(xDistance - w1/2 - w2/2);
-                enemies[i].position.x += penetration + 0.1;
-                state.enemies[i].position.y -= .05;
-            }
-            enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
-        }
-    }
-    
-    //Bullet collision handler
-    for(int i = 0; i < 12; ++i) {
-        for(int j = 0; j < MAX_BULLETS; ++j) {
-            float bulletRight = state.bullets[j].position.x + (state.bullets[j].size.x/2);
-            float bulletLeft = state.bullets[j].position.x - (state.bullets[j].size.x/2);
-            float bulletBottom = state.bullets[j].position.y - (state.bullets[j].size.y/2);
-            float bulletTop = state.bullets[j].position.y + (state.bullets[j].size.y/2);
-            
-            float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
-            float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
-            float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
-            float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
-            
-            if(enemyTop > bulletBottom && enemyBottom < bulletTop && enemyRight > bulletLeft && enemyLeft < bulletRight) {
-                state.enemies[i].DoA = false;
-                enemyModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
-            }
-        }
-    }
-    
-    float playerRight = state.player.position.x + (state.player.size.x/2);
-    float playerLeft = state.player.position.x - (state.player.size.x/2);
-    float playerTop = state.player.position.y + (state.player.size.y/2);
-    float playerBottom = state.player.position.y - (state.player.size.y/2);
-    //enemy to player collision handler
-    for(int i = 0; i < 12; ++i) {
-        float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
-        float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
-        float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
-        float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
-        
-        if(enemyTop > playerBottom && enemyBottom < playerTop && enemyRight > playerLeft && enemyLeft < playerRight){
-            //Player loses goes to main menu
-            mode = STATE_MAIN_MENU;
-        }
-    }
-}
-
-void RenderMainMenu(ShaderProgram* program){
     Matrix modelviewMatrix;
     Matrix modelviewMatrix2;
     modelviewMatrix.Identity();
     modelviewMatrix2.Identity();
-    modelviewMatrix.Translate(-3.0, 1.5, 0.0);
-    modelviewMatrix2.Translate(-1.2, -1.5, 0.0);
-    program->SetModelviewMatrix(modelviewMatrix);
+    modelviewMatrix.Translate(-3.28, 1.5, 0.0);
+    modelviewMatrix2.Translate(-1.95, -1.2, 0.0);
     GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
-    DrawText(program, fontTexture, "Space Invaders", 0.8f, 0.0f);
-    program->SetModelviewMatrix(modelviewMatrix2);
-    DrawText(program, fontTexture, "Press Start to Begin", 0.3f, 0.0f);
-}
 
-void RenderGameLevel(GameState& state){
-    glClear(GL_COLOR_BUFFER_BIT);
-    //Render Player
-    Gprogram.SetModelviewMatrix(playerModelViewMatrix);
-    state.player.Draw(&Gprogram);
-    
-    //Render Bullets
-    for(int i = 0; i < MAX_BULLETS; ++i) {
-        Gprogram.SetModelviewMatrix(bulletModelViewMatrix[i]);
-        state.bullets[i].sprite.Draw(&Gprogram);
-    }
-    //Render Enemies
-    for(int i = 0; i < 12; ++i) {
-        Gprogram.SetModelviewMatrix(enemyModelViewMatrix[i]);
-        state.enemies[i].sprite.Draw(&Gprogram);
-    }
-    
-    //Render Score
-    GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
-    Matrix scoreModelViewMatrix;
-    scoreModelViewMatrix.Identity();
-    scoreModelViewMatrix.Translate(3.0, 1.9, 0.0);
-    Gprogram.SetModelviewMatrix(scoreModelViewMatrix);
-    std::string currentScore = std::to_string(score);
-    DrawText(&Gprogram, fontTexture, currentScore, 0.4, 0.0);
-}
-
-void ProcessInput() {
-    switch(mode){
-        case STATE_MAIN_MENU:
-            ProcessMainMenuInput();
-            break;
-        case STATE_GAME_LEVEL:
-            ProcessGameLevelInput(state);
-            break;
-    }
-}
-
-void Update(float elapsed){
-    switch(mode){
-        case STATE_MAIN_MENU:
-            UpdateMainMenu(elapsed);
-            break;
-        case STATE_GAME_LEVEL:
-            UpdateGameLevel(state,elapsed);
-            break;
-    }
-}
-
-void Render(){
-    switch (mode){
-        case STATE_MAIN_MENU:
-            RenderMainMenu(&Gprogram);
-            break;
-        case STATE_GAME_LEVEL:
-            RenderGameLevel(state);
-            break;
-    }
-}
-
-void CleanUp() {
-
-}
-
-
-int main(int argc, char *argv[])
-{
-
-    SDL_Init(SDL_INIT_VIDEO);
-    
-    displayWindow = SDL_CreateWindow("My Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
-    
-    SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
-    
-    SDL_GL_MakeCurrent(displayWindow, context);
-    ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
-    Gprogram = program;
-    
-    #ifdef _WINDOWS
-        glewInit();
-    #endif
-
-    glViewport(0, 0, 640, 360);
-    
-    Matrix projectionMatrix;
-    projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
-    
-    GLuint spriteSheet = LoadTexture(RESOURCE_FOLDER"sheet.png");
-    SheetSprite playerTexture(spriteSheet, 310.0f/1024.0f, 907.0f/1024.0f, 98.0f/1024.0f, 75.0f/1024.0f, 0.5f);
-    float playerWidth = 0.5 * playerTexture.size * (playerTexture.width / playerTexture.height) * 2;
-    float playerHeight = 0.5 * playerTexture.size * 2;
-    //set up player
-    Entity player;
-    player.sprite = playerTexture;
-    playerModelViewMatrix.Translate(0.0, -1.8, 0.0);
-    player.position = Vector3(0, -1.8, 0.0);
-    player.size = Vector3(playerWidth, playerHeight, 0.0f);
-    state.player = player;
-    //set up bullets
-    SheetSprite bulletTexture(spriteSheet,835.0f/1024.0f, 752.0f/1024.0f, 13.0f/1024.0f, 37.0f/1024.0f, 0.2f);
-    float bulletWidth = 0.5f * bulletTexture.size * (bulletTexture.width / bulletTexture.height) * 2;
-    float bulletHeight = 0.5f * bulletTexture.size * 2;
-    for(int i = 0; i < MAX_BULLETS; ++i) {
-        bullets[i].position.x = -1000.0f;
-        bullets[i].position.y = -1000.0f;
-        bullets[i].sprite = bulletTexture;
-        bullets[i].size.y = bulletHeight;
-        bullets[i].size.x = bulletWidth;
-        bullets[i].velocity = Vector3(0.0, 1.0, 0.0);
-    }
-    for(int i = 0; i < MAX_BULLETS; ++i) {
-        bulletModelViewMatrix[i].Identity();
-        bulletModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
-        
-        state.bullets[i] = bullets[i];
-    }
-    //set up enemies
-    SheetSprite enemyTexture(spriteSheet,425.0f/1024.0f, 384.0f/1024.0f, 93.0f/1024.0f, 84.0f/1024.0f, 0.3f);
-    float enemyWidth = 0.5f * enemyTexture.size * (enemyTexture.width / enemyTexture.height) * 2;
-    float enemyHeight = 0.5f * enemyTexture.size * 2;
-    int initialPos = -2;
-    for(int i = 0; i < 12; i++) {
-        enemies[i].position.x = (initialPos + i/3.55) * 1.2;
-        enemies[i].position.y = i/6;
-        enemies[i].sprite = enemyTexture;
-        enemies[i].size.x = enemyWidth;
-        enemies[i].size.y = enemyHeight;
-        enemies[i].velocity = Vector3(1.0, 0.0, 0.0);
-        enemies[i].direction = Vector3(1.0, 0.0, 0.0);
-        enemies[i].DoA = true;
-        
-    }
-    for (int i = 0; i < 12; ++i){
-        enemyModelViewMatrix[i].Identity();
-        enemyModelViewMatrix[i].SetPosition((initialPos + i/3.55)* 1.2, i/6, 0);
-        
-        state.enemies[i] = enemies[i];
-    }
-    
-    float lastFrameTicks = 0.0f;
-    float accumulator = 0.0f;
-    
     SDL_Event event;
     bool done = false;
     while (!done) {
@@ -480,39 +540,341 @@ int main(int argc, char *argv[])
                 done = true;
             }
             if(event.type == SDL_KEYDOWN) {
-                if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && mode == STATE_GAME_LEVEL) {
-                    shootBullet();
+                if(event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                    mode = STATE_GAME_LEVEL;
+                    done = true;
                 }
             }
         }
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(program.programID);
+        program.SetProjectionMatrix(projectionMatrix);
+        program.SetModelviewMatrix(modelviewMatrix);
+        DrawText(&program, fontTexture, "Space Invaders", 0.5f, 0.0f);
+        program.SetModelviewMatrix(modelviewMatrix2);
+        DrawText(&program, fontTexture, "Press Start to Begin", 0.2f, 0.0f);
+
+
+        SDL_GL_SwapWindow(displayWindow);
+    }
+}
+
+void gameLevel() {
+    ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glViewport(0, 0, 640, 360);
+    Matrix projectionMatrix;
+    projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
+
+
+    Matrix playerModelViewMatrix;
+    Matrix scoreModelViewMatrix;
+    Matrix enemyModelViewMatrix[12];
+    Matrix bulletModelViewMatrix[MAX_BULLETS];
+
+    int bulletIndex = 0;
+    //Entity bullets[MAX_BULLETS];
+    //Entity enemies[12];
+    int score = 0;
+    
+    GLuint spriteSheet = LoadTexture(RESOURCE_FOLDER"sheet.png");
+    //player setup
+    SheetSprite playerTexture(spriteSheet, 310.0f/1024.0f, 907.0f/1024.0f, 98.0f/1024.0f, 75.0f/1024.0f, 0.5f);
+    float playerWidth = 0.5 * playerTexture.size * (playerTexture.width / playerTexture.height) * 2;
+    float playerHeight = 0.5 * playerTexture.size * 2;
+    state.player.sprite = playerTexture;
+    playerModelViewMatrix.Translate(0.0, -1.8, 0.0);
+    state.player.position = Vector3(0, -1.8, 0.0);
+    state.player.size = Vector3(playerWidth, playerHeight, 0.0f);
+
+    //set up font textures
+    GLuint fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+    scoreModelViewMatrix.Translate(2.90, 1.9, 0.0);
+    std::string currentScore = std::to_string(score);
+    state.score = score;
+
+    //set up bullets
+    SheetSprite bulletTexture(spriteSheet,835.0f/1024.0f, 752.0f/1024.0f, 13.0f/1024.0f, 37.0f/1024.0f, 0.2f);
+    float bulletWidth = 0.5f * bulletTexture.size * (bulletTexture.width / bulletTexture.height) * 2;
+    float bulletHeight = 0.5f * bulletTexture.size * 2;
+    for(int i = 0; i < MAX_BULLETS; ++i) {
+        state.bullets[i].position.x = -1000.0f;
+        state.bullets[i].position.y = -1000.0f;
+        state.bullets[i].sprite = bulletTexture;
+        state.bullets[i].size.y = bulletHeight;
+        state.bullets[i].size.x = bulletWidth;
+        state.bullets[i].velocity = Vector3(0.0, 1.9, 0.0);
+    }
+    for(int i = 0; i < MAX_BULLETS; ++i) {
+        bulletModelViewMatrix[i].Identity();
+        bulletModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
+    }
+
+    //set up enemies
+    SheetSprite enemyTexture(spriteSheet,425.0f/1024.0f, 384.0f/1024.0f, 93.0f/1024.0f, 84.0f/1024.0f, 0.3f);
+    float enemyWidth = 0.5f * enemyTexture.size * (enemyTexture.width / enemyTexture.height) * 2;
+    float enemyHeight = 0.5f * enemyTexture.size * 2;
+    int initialPos = -2;
+    for(int i = 0; i < 12; i++) {
+        state.enemies[i].position.x = (initialPos + i/3.55) * 1.2;
+        state.enemies[i].position.y = i/6;
+        state.enemies[i].sprite = enemyTexture;
+        state.enemies[i].size.x = enemyWidth;
+        state.enemies[i].size.y = enemyHeight;
+        state.enemies[i].velocity = Vector3(1.0, 0.0, 0.0);
+        state.enemies[i].direction = Vector3(1.0, 0.0, 0.0);
+        state.enemies[i].DoA = true;
+
+    }
+    for (int i = 0; i < 12; ++i){
+        enemyModelViewMatrix[i].Identity();
+        enemyModelViewMatrix[i].SetPosition((initialPos + i/3.55)* 1.2, i/6, 0);
+    }
+    
+    //Initalize Time Variables
+    float lastFrameTicks = 0.0f;
+    float accumulator = 0.0f;
+    
+    //Initialize enemy death counter
+    int currentDead = 0;
+    
+    int lastEnemy = 5;
+    int firstEnemy = 0;
+    int last2Enemy = 11;
+    int first2Enemy = 6;
+    
+    const Uint8 *keys = SDL_GetKeyboardState(NULL);
+    SDL_Event event;
+    bool done = false;
+    while (!done) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+                done = true;
+            }
+            if(event.type == SDL_KEYDOWN) {
+                if(event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                    state.bullets[bulletIndex].position.x = state.player.position.x;
+                    state.bullets[bulletIndex].position.y = state.player.position.y;
+                    bulletIndex++;
+                    if(bulletIndex > MAX_BULLETS - 1) {
+                        bulletIndex = 0;
+                    }
+                }
+            }
+        }
         
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(program.programID);
+        program.SetProjectionMatrix(projectionMatrix);
+        //Reset enemies when all dead
+        if(currentDead == 12) {
+            int initialPos = -2;
+            for(int i = 0; i < 12; ++i) {
+                state.enemies[i].DoA = true;
+                state.enemies[i].position.x = (initialPos + i/3.55) * 1.2;
+                state.enemies[i].position.y = i/6;
+                state.enemies[i].direction = Vector3(1.0f,0.0f,0.0f);
+            }
+            currentDead = 0;
+        }
+
+
         float ticks = (float)SDL_GetTicks()/1000.0f;
         float elapsed = ticks - lastFrameTicks;
         lastFrameTicks = ticks;
+        
         elapsed += accumulator;
         if(elapsed < FIXED_TIMESTEP) {
             accumulator = elapsed;
             continue;
         }
         while(elapsed >= FIXED_TIMESTEP) {
-            Update(FIXED_TIMESTEP);
+            //Update(FIXED_TIMESTEP);
             elapsed -= FIXED_TIMESTEP;
         }
         
-        glUseProgram(program.programID);
-        program.SetProjectionMatrix(projectionMatrix);
+        //Render Player
+        program.SetModelviewMatrix(playerModelViewMatrix);
+        state.player.sprite.Draw(&program);
+    
+        //Render Bullets
+        for(int i = 0; i < MAX_BULLETS; ++i) {
+            program.SetModelviewMatrix(bulletModelViewMatrix[i]);
+            state.bullets[i].sprite.Draw(&program);
+        }
+        //Render Enemies
+        for(int i = 0; i < 12; ++i) {
+            program.SetModelviewMatrix(enemyModelViewMatrix[i]);
+            state.enemies[i].sprite.Draw(&program);
+        }
+    
+        //Render Score
+        program.SetModelviewMatrix(scoreModelViewMatrix);
+        std::string currentScore = std::to_string(state.score);
+        DrawText(&program, fontTexture, currentScore, 0.25, 0.0);
         
-        Render();
-        Update(elapsed);
-        ProcessInput();
+        //Controls for ship
+        if(keys[SDL_SCANCODE_A]) {
+            if(state.player.position.x > -3.55) {
+                state.player.position.x -= elapsed * 1.3f;
+            }
+            playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
+        }
+        else if(keys[SDL_SCANCODE_D]) {
+            if(state.player.position.x < 3.55) {
+                state.player.position.x += elapsed * 1.3f;
+            }
+            playerModelViewMatrix.SetPosition(state.player.position.x, -1.8, 0.0);
+        }
+        //Move bullets that are shot
+        for(int i = 0; i < MAX_BULLETS; ++i) {
+            state.bullets[i].position.y += elapsed * state.bullets[bulletIndex].velocity.y;
+            bulletModelViewMatrix[i].SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
+        }
         
-        
+        //Move enemies
+        //first row of enemies
+        if(state.enemies[firstEnemy].position.x < -3.55 + (state.enemies[firstEnemy].size.x/2)) {
+            for(int i = firstEnemy; i < lastEnemy; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].direction.x *= -1;
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    state.enemies[i].position.y -= .05;
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+        else if(state.enemies[lastEnemy].position.x > 3.55 + (state.enemies[lastEnemy].size.x/2)) {
+            for(int i = firstEnemy; i < lastEnemy; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].direction.x *= -1;
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    state.enemies[i].position.y -= .05;
+                    //Have them go opposite direction when hitting edge of screen and collision
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+        else{
+            for(int i = firstEnemy; i < lastEnemy; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+        //2nd row of enemies
+        if(state.enemies[first2Enemy].position.x < -3.55 + (state.enemies[first2Enemy].size.x/2)) {
+            for(int i = 0; i < 12; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].direction.x *= -1;
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    state.enemies[i].position.y -= .05;
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+        else if(state.enemies[last2Enemy].position.x > 3.55 + (state.enemies[last2Enemy].size.x/2)) {
+            for(int i = 0; i < 12; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].direction.x *= -1;
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    state.enemies[i].position.y -= .05;
+                    //Have them go opposite direction when hitting edge of screen and collision
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+        else{
+            for(int i = 0; i < 12; ++i) {
+                if(state.enemies[i].DoA == true) {
+                    state.enemies[i].position.x += state.enemies[i].direction.x * elapsed * state.enemies[i].velocity.x;
+                    enemyModelViewMatrix[i].SetPosition(state.enemies[i].position.x, state.enemies[i].position.y, 0.0);
+                }
+            }
+        }
+    
+        //Bullet collision handler
+        for(int i = 0; i < 12; ++i) {
+            for(int j = 0; j < MAX_BULLETS; ++j) {
+                float bulletRight = state.bullets[j].position.x + (state.bullets[j].size.x/2);
+                float bulletLeft = state.bullets[j].position.x - (state.bullets[j].size.x/2);
+                float bulletBottom = state.bullets[j].position.y - (state.bullets[j].size.y/2);
+                float bulletTop = state.bullets[j].position.y + (state.bullets[j].size.y/2);
+    
+                float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
+                float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
+                float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
+                float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
+    
+                if(enemyTop > bulletBottom && enemyBottom < bulletTop && enemyRight > bulletLeft && enemyLeft < bulletRight) {
+                    state.enemies[i].DoA = false;
+                    if(i == lastEnemy) {
+                        lastEnemy -= 1;
+                    }
+                    if(i == firstEnemy){
+                        firstEnemy += 1;
+                    }
+                    enemyModelViewMatrix[i].SetPosition(0.0, -1000.0, 0.0);
+                    ++currentDead;
+                    state.score += 1;
+                }
+            }
+        }
+    
+        float playerRight = state.player.position.x + (state.player.size.x/2);
+        float playerLeft = state.player.position.x - (state.player.size.x/2);
+        float playerTop = state.player.position.y + (state.player.size.y/2);
+        float playerBottom = state.player.position.y - (state.player.size.y/2);
+        //enemy to player collision handler
+        for(int i = 0; i < 12; ++i) {
+            float enemyRight = state.enemies[i].position.x + (state.enemies[i].size.x/2);
+            float enemyLeft = state.enemies[i].position.x - (state.enemies[i].size.x/2);
+            float enemyTop = state.enemies[i].position.y + (state.enemies[i].size.y/2);
+            float enemyBottom = state.enemies[i].position.y - (state.enemies[i].size.y/2);
+    
+            if(enemyTop > playerBottom && enemyBottom < playerTop && enemyRight > playerLeft && enemyLeft < playerRight){
+                //Player loses goes to main menu
+                mode = STATE_MAIN_MENU;
+            }
+        }
         SDL_GL_SwapWindow(displayWindow);
     }
+}
 
+int main(int argc, char *argv[])
+{
+    SDL_Init(SDL_INIT_VIDEO);
     
+    displayWindow = SDL_CreateWindow("My Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
+    
+    SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
+    
+    SDL_GL_MakeCurrent(displayWindow, context);
+    
+    #ifdef _WINDOWS
+        glewInit();
+    #endif
+
+    bool done = false;
+    while(!done) {
+        switch(mode) {
+            case STATE_MAIN_MENU:
+                mainMenu();
+                break;
+            case STATE_GAME_LEVEL:
+                gameLevel();
+                done = true;
+        }
+    }
     SDL_Quit();
     return 0;
 }
+
+
 
