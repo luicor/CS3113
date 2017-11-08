@@ -439,8 +439,8 @@ bool readLayerData(ifstream& stream) {
 void placeEntity(string type, float x, float y)
 {
     if (type == "Player") {
-        cout << x << endl;
-        cout << y << endl;
+//        cout << x << endl;
+//        cout << y << endl;
         player.entityType = ENTITY_PLAYER;
         player.isStatic = false;
         player.position = Vector3(x, y, 0.0f);
@@ -569,11 +569,20 @@ void drawMap(ShaderProgram* program) {
 }
 
 void Update(float elapsed) {
+    int tileX = 0;
+    int tileY = 0;
+    //top collision
+    worldToTileCoordinates(player.position.x, player.position.y - (player.height / 2), &tileX, &tileY);
     player.Update(elapsed);
     player.CollidesWith(&coin);
     coin.Update(elapsed);
     viewMatrix.Identity();
-    viewMatrix.Translate(-player.position.x, -player.position.y - 1.5, 0.0f);
+    if(player.position.x >= 9.8){
+        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
+    }
+    else{
+        viewMatrix.Translate(-9.8, -player.position.y - 2.0, 0.0f);
+    }
 }
 
 void Render() {
@@ -620,7 +629,7 @@ int main(int argc, char *argv[])
     
     glViewport(0, 0, 640, 360);
     Matrix projectionMatrix;
-    projectionMatrix.SetOrthoProjection(-8.55f, 8.55f, -3.0f, 3.0f, -1.0f, 1.0f);
+    projectionMatrix.SetOrthoProjection(-9.55f, 9.55f, -4.0f, 4.0f, -1.0f, 1.0f);
     
     
     createMap(RESOURCE_FOLDER"mymap.txt");
