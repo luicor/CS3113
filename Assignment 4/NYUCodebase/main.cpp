@@ -178,6 +178,7 @@ public:
     Entity(){
         render = true;
         friction.y = 0.5f;
+        friction.x = 1.0f;
         height = TILE_SIZE * 0.5;
         width = TILE_SIZE * 0.5;
         penetration.x = 0.0;
@@ -245,7 +246,7 @@ void Entity::collideTileX(){
         collidedLeft = true;
         velocity.x = 0.0f;
         penetration.x = (position.x - (width / 2)) - (TILE_SIZE * tileX + TILE_SIZE);
-        position.x -= (penetration.x - 0.005f);
+        position.x -= (penetration.x - 0.05f);
     }
     else{
         collidedLeft = false;
@@ -258,7 +259,7 @@ void Entity::collideTileX(){
         collidedRight = true;
         velocity.x = 0.0f;
         penetration.x = (TILE_SIZE * tileX) - (position.x + (width / 2));
-        position.x += (penetration.x - 0.005f);
+        position.x += (penetration.x - 0.05f);
     }
     else{
         collidedRight = false;
@@ -276,7 +277,7 @@ void Entity::collideTileY(){
         collidedTop = true;
         velocity.y = 0.0f;
         penetration.y = fabs((position.y + (height / 2)) - ((-TILE_SIZE * tileY) - TILE_SIZE));
-        position.y -= (penetration.y + 0.002f);
+        position.y -= (penetration.y + 0.02f);
     }
     else{
         collidedTop = false;
@@ -290,7 +291,7 @@ void Entity::collideTileY(){
         velocity.y = 0.0f;
         acceleration.y = 0.0f;
         penetration.y = (-TILE_SIZE * tileY) - (position.y - (height / 2));
-        position.y += penetration.y + 0.002f;
+        position.y += penetration.y + 0.02f;
     }
     else{
         collidedBottom = false;
@@ -305,19 +306,21 @@ void Entity::Update(float elapsed) {
     if(entityType == ENTITY_PLAYER) {
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
         if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A]) {
-            acceleration.x = -0.5f;
+            acceleration.x = -2.5f;
         }
         else if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D]) {
-            acceleration.x = 0.5f;
+            acceleration.x = 2.5f;
         }
         if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W]) {
             if (collidedBottom == true) {
-                velocity.y = 5.0f;
+                velocity.y = 4.0f;
             }
         }
     }
     
-    velocity.x += acceleration.x * elapsed;
+    if(velocity.x < 20.0f){
+        velocity.x += acceleration.x * elapsed;
+    }
     velocity.y += acceleration.y * elapsed;
     
     //update position and check for collisions with tiles
@@ -570,7 +573,7 @@ void Update(float elapsed) {
     player.CollidesWith(&coin);
     coin.Update(elapsed);
     viewMatrix.Identity();
-    viewMatrix.Translate(-player.position.x, -player.position.y, 0.0f);
+    viewMatrix.Translate(-player.position.x, -player.position.y - 1.5, 0.0f);
 }
 
 void Render() {
