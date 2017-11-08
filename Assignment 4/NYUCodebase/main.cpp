@@ -241,8 +241,6 @@ void Entity::collideTileX(){
     
     //left collision
     worldToTileCoordinates(position.x - (width / 2.0f), position.y, &tileX, &tileY);
-    cout << tileX << endl;
-    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedLeft = true;
         velocity.x = 0.0f;
@@ -256,8 +254,6 @@ void Entity::collideTileX(){
     
     //right collision
     worldToTileCoordinates(position.x + (width / 2), position.y, &tileX, &tileY);
-    cout << tileX << endl;
-    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedRight = true;
         velocity.x = 0.0f;
@@ -276,8 +272,6 @@ void Entity::collideTileY(){
     int tileY = 0;
     //top collision
     worldToTileCoordinates(position.x, position.y + (height / 2), &tileX, &tileY);
-    cout << tileX << endl;
-    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])){
         collidedTop = true;
         velocity.y = 0.0f;
@@ -291,8 +285,6 @@ void Entity::collideTileY(){
     
     //bottom collision
     worldToTileCoordinates(position.x, position.y - (height / 2), &tileX, &tileY);
-    cout << tileX << endl;
-    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedBottom = true;
         velocity.y = 0.0f;
@@ -320,7 +312,7 @@ void Entity::Update(float elapsed) {
         }
         if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W]) {
             if (collidedBottom == true) {
-                velocity.y = 3.0f;
+                velocity.y = 5.0f;
             }
         }
     }
@@ -444,6 +436,8 @@ bool readLayerData(ifstream& stream) {
 void placeEntity(string type, float x, float y)
 {
     if (type == "Player") {
+        cout << x << endl;
+        cout << y << endl;
         player.entityType = ENTITY_PLAYER;
         player.isStatic = false;
         player.position = Vector3(x, y, 0.0f);
@@ -611,7 +605,7 @@ int main(int argc, char *argv[])
     
     //viewMatrix.Scale(2.0, 2.0, 0.0);
     
-    solids = {1, 2, 4, 18, 33};
+    solids = {1, 3,  17, 32};
     
     sheet = LoadTexture(RESOURCE_FOLDER"arne_sprites.png");
 
@@ -623,7 +617,7 @@ int main(int argc, char *argv[])
     
     glViewport(0, 0, 640, 360);
     Matrix projectionMatrix;
-    projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
+    projectionMatrix.SetOrthoProjection(-8.55f, 8.55f, -3.0f, 3.0f, -1.0f, 1.0f);
     
     
     createMap(RESOURCE_FOLDER"mymap.txt");
