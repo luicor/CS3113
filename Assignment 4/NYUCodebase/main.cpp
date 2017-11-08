@@ -26,13 +26,15 @@ using namespace std;
 #define TILE_SIZE 1.0f
 #define SPRITE_COUNT_X 16
 #define SPRITE_COUNT_Y 8
+#define mapHeight 23
+#define mapWidth 58
 
 SDL_Window* displayWindow;
 ShaderProgram program;
 
 GLuint sheet;
 
-vector<int> solids = {1, 2, 4, 18, 33};
+vector<int> solids;
 
 Matrix viewMatrix;
 Matrix mapModelMatrix;
@@ -42,9 +44,7 @@ enum GameMode { STATE_MAIN_MENU, STATE_GAME_LEVEL};
 
 enum EntityType {ENTITY_PLAYER, ENTITY_COIN};
 
-int** levelData;
-int mapWidth;
-int mapHeight;
+int levelData[23][58];
 
 
 float lerp(float v0, float v1, float t) {
@@ -93,7 +93,7 @@ public:
         v = (float)(((int)idx) / SPRITE_COUNT_X) / (float) SPRITE_COUNT_Y;
         width = 1.0/(float)SPRITE_COUNT_X;
         height = 1.0/(float)SPRITE_COUNT_Y;
-        size = TILE_SIZE * 0.5;
+        size = TILE_SIZE;
     };
     
     void Draw(ShaderProgram *program);
@@ -241,6 +241,8 @@ void Entity::collideTileX(){
     
     //left collision
     worldToTileCoordinates(position.x - (width / 2.0f), position.y, &tileX, &tileY);
+    cout << tileX << endl;
+    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedLeft = true;
         velocity.x = 0.0f;
@@ -254,6 +256,8 @@ void Entity::collideTileX(){
     
     //right collision
     worldToTileCoordinates(position.x + (width / 2), position.y, &tileX, &tileY);
+    cout << tileX << endl;
+    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedRight = true;
         velocity.x = 0.0f;
@@ -270,9 +274,10 @@ void Entity::collideTileX(){
 void Entity::collideTileY(){
     int tileX = 0;
     int tileY = 0;
-    
     //top collision
     worldToTileCoordinates(position.x, position.y + (height / 2), &tileX, &tileY);
+    cout << tileX << endl;
+    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])){
         collidedTop = true;
         velocity.y = 0.0f;
@@ -286,6 +291,8 @@ void Entity::collideTileY(){
     
     //bottom collision
     worldToTileCoordinates(position.x, position.y - (height / 2), &tileX, &tileY);
+    cout << tileX << endl;
+    cout << tileY << endl;
     if(isSolid(levelData[tileY][tileX])) {
         collidedBottom = true;
         velocity.y = 0.0f;
@@ -370,38 +377,38 @@ void Entity::CollidesWith(Entity* entity) {
 Entity player;
 Entity coin;
 
-bool readHeader(ifstream& stream) {
-    string line;
-    mapWidth = -1;
-    mapHeight = -1;
-    while(getline(stream, line)) {
-        if(line == "") {
-            break;
-        }
-        
-        istringstream sStream(line);
-        string key,value;
-        getline(sStream, key, '=');
-        getline(sStream, value);
-        
-        if(key == "width") {
-            mapWidth = atoi(value.c_str());
-        }
-        else if(key == "height"){
-            mapHeight = atoi(value.c_str());
-        }
-    }
-    if(mapWidth == -1 || mapHeight == -1) {
-        return false;
-    }
-    else { // allocate our map data
-        levelData = new int*[mapHeight];
-        for(int i = 0; i < mapHeight; ++i) {
-            levelData[i] = new int[mapWidth];
-        }
-        return true;
-    }
-}
+//bool readHeader(ifstream& stream) {
+//    string line;
+//    mapWidth = -1;
+//    mapHeight = -1;
+//    while(getline(stream, line)) {
+//        if(line == "") {
+//            break;
+//        }
+//
+//        istringstream sStream(line);
+//        string key,value;
+//        getline(sStream, key, '=');
+//        getline(sStream, value);
+//
+//        if(key == "width") {
+//            mapWidth = atoi(value.c_str());
+//        }
+//        else if(key == "height"){
+//            mapHeight = atoi(value.c_str());
+//        }
+//    }
+//    if(mapWidth == -1 || mapHeight == -1) {
+//        return false;
+//    }
+//    else { // allocate our map data
+//        levelData = new int*[mapHeight];
+//        for(int i = 0; i < mapHeight; ++i) {
+//            levelData[i] = new int[mapWidth];
+//        }
+//        return true;
+//    }
+//}
 
 bool readLayerData(ifstream& stream) {
     string line;
@@ -507,12 +514,12 @@ void createMap(string input)
     ifstream gamedata(input);
     string line;
     while (getline(gamedata, line)) {
-        if (line == "[header]") {
-            if(!readHeader(gamedata)) {
-                assert(false);
-            }
-        }
-        else if (line == "[layer]") {
+//        if (line == "[header]") {
+//            if(!readHeader(gamedata)) {
+//                assert(false);
+//            }
+//        }
+        if (line == "[layer]") {
             readLayerData(gamedata);
         }
         else if (line == "[ObjectsLayer]") {
@@ -574,7 +581,6 @@ void Update(float elapsed) {
 
 void Render() {
     mapModelMatrix.Identity();
-    mapModelMatrix.Scale(0.25, 0.25, 0.0);
     mapMVM = viewMatrix * mapModelMatrix;
     program.SetModelviewMatrix(mapMVM);
     drawMap(&program);
@@ -604,6 +610,8 @@ int main(int argc, char *argv[])
     #endif
     
     //viewMatrix.Scale(2.0, 2.0, 0.0);
+    
+    solids = {1, 2, 4, 18, 33};
     
     sheet = LoadTexture(RESOURCE_FOLDER"arne_sprites.png");
 
