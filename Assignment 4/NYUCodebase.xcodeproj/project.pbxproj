@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6CBC90581FAFF67A0064342A /* arne_sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CBC90571FAFF67A0064342A /* arne_sprites.png */; };
+		6CBC90661FB27D870064342A /* mymap.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6CBC90651FB27D870064342A /* mymap.txt */; };
 		6D5A86AE19AE5C710066C1FD /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D5A86AD19AE5C710066C1FD /* Cocoa.framework */; };
 		6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6D5A86B619AE5C710066C1FD /* InfoPlist.strings */; };
 		6D5A86BA19AE5C710066C1FD /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6D5A86B919AE5C710066C1FD /* main.cpp */; };
@@ -24,9 +26,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		6C15B0CC1F946C7600D5B32D /* pixel_font.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = pixel_font.png; path = "../../../CS3113-Class/assets/fonts/pixel_font.png"; sourceTree = "<group>"; };
-		6C15B0CD1F94893900D5B32D /* sheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = sheet.png; path = "../../../../../Library/Developer/Xcode/DerivedData/NYUCodebase-bktcdxhvedtlktdzvqinvlvwudzb/Build/Products/Debug/NYUCodebase.app/Contents/Resources/sheet.png"; sourceTree = "<group>"; };
 		6C15B0CE1F94901F00D5B32D /* Vector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector.h; path = ../../../../../Desktop/Archive/NYUCodebase/Vector.h; sourceTree = "<group>"; };
+		6CBC90571FAFF67A0064342A /* arne_sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = arne_sprites.png; path = "../../../CS3113-Class/assets/sprite_sheets/arne_sprites.png"; sourceTree = "<group>"; };
+		6CBC90651FB27D870064342A /* mymap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = mymap.txt; path = ../../../../../Desktop/mymap.txt; sourceTree = "<group>"; };
 		6D5A86AA19AE5C710066C1FD /* NYUCodebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYUCodebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5A86AD19AE5C710066C1FD /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		6D5A86B019AE5C710066C1FD /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -156,8 +158,8 @@
 				6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */,
 				6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */,
 				6DEF23C01B96CC2600BCE792 /* vertex.glsl */,
-				6C15B0CC1F946C7600D5B32D /* pixel_font.png */,
-				6C15B0CD1F94893900D5B32D /* sheet.png */,
+				6CBC90571FAFF67A0064342A /* arne_sprites.png */,
+				6CBC90651FB27D870064342A /* mymap.txt */,
 				6D5A86B919AE5C710066C1FD /* main.cpp */,
 			);
 			name = Code;
@@ -218,6 +220,8 @@
 			files = (
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
 				6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */,
+				6CBC90661FB27D870064342A /* mymap.txt in Resources */,
+				6CBC90581FAFF67A0064342A /* arne_sprites.png in Resources */,
 				6DE9D2F11BA6AB8C002D599C /* fragment_textured.glsl in Resources */,
 				6D5A86C619AE5C710066C1FD /* Images.xcassets in Resources */,
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
