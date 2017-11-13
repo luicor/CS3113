@@ -179,7 +179,7 @@ public:
         render = true;
         friction.y = 0.5f;
         friction.x = 1.0f;
-        height = TILE_SIZE * 0.5;
+        height = TILE_SIZE;
         width = TILE_SIZE * 0.5;
         penetration.x = 0.0;
         penetration.y = 0.0;
@@ -246,7 +246,7 @@ void Entity::collideTileX(){
         collidedLeft = true;
         velocity.x = 0.0f;
         penetration.x = (position.x - (width / 2)) - (TILE_SIZE * tileX + TILE_SIZE);
-        position.x -= (penetration.x - 0.05f);
+        position.x -= (penetration.x - 0.005f);
     }
     else{
         collidedLeft = false;
@@ -259,7 +259,7 @@ void Entity::collideTileX(){
         collidedRight = true;
         velocity.x = 0.0f;
         penetration.x = (TILE_SIZE * tileX) - (position.x + (width / 2));
-        position.x += (penetration.x - 0.05f);
+        position.x += (penetration.x - 0.005f);
     }
     else{
         collidedRight = false;
@@ -277,7 +277,7 @@ void Entity::collideTileY(){
         collidedTop = true;
         velocity.y = 0.0f;
         penetration.y = fabs((position.y + (height / 2)) - ((-TILE_SIZE * tileY) - TILE_SIZE));
-        position.y -= (penetration.y + 0.02f);
+        position.y -= (penetration.y + 0.005f);
     }
     else{
         collidedTop = false;
@@ -291,7 +291,7 @@ void Entity::collideTileY(){
         velocity.y = 0.0f;
         acceleration.y = 0.0f;
         penetration.y = (-TILE_SIZE * tileY) - (position.y - (height / 2));
-        position.y += penetration.y + 0.02f;
+        position.y += penetration.y + 0.005f;
     }
     else{
         collidedBottom = false;
@@ -329,9 +329,11 @@ void Entity::Update(float elapsed) {
     
     position.x += velocity.x * elapsed;
     collideTileX();
-    
-    modelMatrix.Identity();
-    modelMatrix.Translate(position.x, position.y, 1.0);
+
+    if(position.x >= 0.6f) {
+        modelMatrix.Identity();
+        modelMatrix.Translate(position.x, position.y, 1.0);
+    }
 }
 
 void Entity::Render(ShaderProgram &program){
@@ -439,8 +441,6 @@ bool readLayerData(ifstream& stream) {
 void placeEntity(string type, float x, float y)
 {
     if (type == "Player") {
-//        cout << x << endl;
-//        cout << y << endl;
         player.entityType = ENTITY_PLAYER;
         player.isStatic = false;
         player.position = Vector3(x, y, 0.0f);
@@ -569,10 +569,6 @@ void drawMap(ShaderProgram* program) {
 }
 
 void Update(float elapsed) {
-    int tileX = 0;
-    int tileY = 0;
-    //top collision
-    worldToTileCoordinates(player.position.x, player.position.y - (player.height / 2), &tileX, &tileY);
     player.Update(elapsed);
     player.CollidesWith(&coin);
     coin.Update(elapsed);
@@ -600,9 +596,6 @@ void Render() {
 
 int main(int argc, char *argv[])
 {
-    //SORRY I HAVE BEEN SICK AND LOOKING AT COMPUTER SCREENS HAVE BEEN GIVING ME MIGRAINES, I WILL GET THIS TO WORK FOR THE FINAL PROJECT
-    //I AM ALMOST THERE IN GETTING IN DONE
-    
     SDL_Init(SDL_INIT_VIDEO);
     
     displayWindow = SDL_CreateWindow("My Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
@@ -617,7 +610,7 @@ int main(int argc, char *argv[])
     
     //viewMatrix.Scale(2.0, 2.0, 0.0);
     
-    solids = {1, 3,  17, 32};
+    solids = {1,2, 3,  17, 32};
     
     sheet = LoadTexture(RESOURCE_FOLDER"arne_sprites.png");
 
