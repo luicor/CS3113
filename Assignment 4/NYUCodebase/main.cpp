@@ -33,6 +33,7 @@ SDL_Window* displayWindow;
 ShaderProgram program;
 
 GLuint sheet;
+GLuint psheet;
 
 vector<int> solids;
 
@@ -447,7 +448,7 @@ void placeEntity(string type, float x, float y)
         player.velocity = Vector3(0.0f, 0.0f, 0.0f);
         player.acceleration = Vector3(0.0f, -1.0f, 0.0f);
         player.render = true;
-        player.sprite = SheetSprite(sheet, 98);
+        player.sprite = SheetSprite(psheet, 0);
         player.size.x = player.sprite.width;
         player.size.y = player.sprite.height;
         player.modelMatrix.Identity();
@@ -569,16 +570,26 @@ void drawMap(ShaderProgram* program) {
 }
 
 void Update(float elapsed) {
+    cout << player.position.x << endl;
     player.Update(elapsed);
     player.CollidesWith(&coin);
     coin.Update(elapsed);
     viewMatrix.Identity();
-    if(player.position.x >= 9.8){
-        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
-    }
-    else{
+    if(player.position.x < 9.8){
         viewMatrix.Translate(-9.8, -player.position.y - 2.0, 0.0f);
     }
+    else if(player.position.x > 45.4) {
+        viewMatrix.Translate(-45.4, -player.position.y - 2.0, 0.0f);
+    }
+    else{
+        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
+    }
+//    if(player.position.x <= 45.4) {
+//        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
+//    }
+//    else{
+//        viewMatrix.Translate(-45.4, -player.position.y -2.0, 0.0f);
+//    }
 }
 
 void Render() {
@@ -613,6 +624,8 @@ int main(int argc, char *argv[])
     solids = {1,2, 3,  17, 32};
     
     sheet = LoadTexture(RESOURCE_FOLDER"arne_sprites.png");
+    
+    psheet = LoadTexture(RESOURCE_FOLDER"p1_spritesheet.png");
 
     ShaderProgram p(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
     program = p;

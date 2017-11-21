@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6C6BBD101FC35C5F0063CD88 /* p1_spritesheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */; };
 		6C8F4B651FBA15B600CDC273 /* mymap.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6C8F4B641FBA15B600CDC273 /* mymap.txt */; };
 		6CBC90581FAFF67A0064342A /* arne_sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CBC90571FAFF67A0064342A /* arne_sprites.png */; };
 		6D5A86AE19AE5C710066C1FD /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D5A86AD19AE5C710066C1FD /* Cocoa.framework */; };
@@ -27,6 +28,7 @@
 
 /* Begin PBXFileReference section */
 		6C15B0CE1F94901F00D5B32D /* Vector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector.h; path = ../../../../../Desktop/Archive/NYUCodebase/Vector.h; sourceTree = "<group>"; };
+		6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = p1_spritesheet.png; path = "../../../CS3113-Class/assets/graphics/Platformer assets (1330 assets)/Base pack (360 assets)/Player/p1_spritesheet.png"; sourceTree = "<group>"; };
 		6C8F4B641FBA15B600CDC273 /* mymap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = mymap.txt; path = ../../../../../Desktop/mymap.txt; sourceTree = "<group>"; };
 		6CBC90571FAFF67A0064342A /* arne_sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = arne_sprites.png; path = "../../../CS3113-Class/assets/sprite_sheets/arne_sprites.png"; sourceTree = "<group>"; };
 		6D5A86AA19AE5C710066C1FD /* NYUCodebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYUCodebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -158,6 +160,7 @@
 				6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */,
 				6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */,
 				6DEF23C01B96CC2600BCE792 /* vertex.glsl */,
+				6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */,
 				6CBC90571FAFF67A0064342A /* arne_sprites.png */,
 				6C8F4B641FBA15B600CDC273 /* mymap.txt */,
 				6D5A86B919AE5C710066C1FD /* main.cpp */,
@@ -227,6 +230,7 @@
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
 				6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */,
 				6DC7076A1BA7273500225B7D /* vertex_textured.glsl in Resources */,
+				6C6BBD101FC35C5F0063CD88 /* p1_spritesheet.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
