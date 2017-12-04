@@ -35,7 +35,15 @@ ShaderProgram program;
 GLuint sheet;
 GLuint psheet;
 
+//Mix_Chunk* jump;
+
 vector<int> solids;
+
+const int runAnimation[] = {1, 2, 3, 4};
+const int numFrames = 4;
+float animationElapsed = 0.0f;
+float framesPerSecond = 30.0f;
+int currentIndex = 0;
 
 Matrix viewMatrix;
 Matrix mapModelMatrix;
@@ -94,6 +102,14 @@ public:
         v = (float)(((int)idx) / SPRITE_COUNT_X) / (float) SPRITE_COUNT_Y;
         width = 1.0/(float)SPRITE_COUNT_X;
         height = 1.0/(float)SPRITE_COUNT_Y;
+        size = TILE_SIZE;
+    };
+    
+    SheetSprite(GLuint tID, int idx, string playerID) : textureID(tID), index(idx) {
+        u = (float)(((int)idx) % 7) / (float) 7.0;
+        v = (float)(((int)idx) / 7) / (float) 5.5;
+        width = 1.0/(float)7.0;
+        height = 1.0/(float)5.5;
         size = TILE_SIZE;
     };
     
@@ -293,6 +309,9 @@ void Entity::collideTileY(){
         acceleration.y = 0.0f;
         penetration.y = (-TILE_SIZE * tileY) - (position.y - (height / 2));
         position.y += penetration.y + 0.005f;
+//        if(entityType == ENTITY_PLAYER) {
+//            sprite = SheetSprite(psheet, 1, "player");
+//        }
     }
     else{
         collidedBottom = false;
@@ -308,12 +327,19 @@ void Entity::Update(float elapsed) {
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
         if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A]) {
             acceleration.x = -2.5f;
+            if(collidedBottom == true) {
+                sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
+            }
         }
         else if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D]) {
             acceleration.x = 2.5f;
+            if(collidedBottom == true) {
+                sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
+            }
         }
         if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W]) {
             if (collidedBottom == true) {
+                sprite = SheetSprite(psheet, 13, "player");;
                 velocity.y = 4.0f;
             }
         }
@@ -448,7 +474,7 @@ void placeEntity(string type, float x, float y)
         player.velocity = Vector3(0.0f, 0.0f, 0.0f);
         player.acceleration = Vector3(0.0f, -1.0f, 0.0f);
         player.render = true;
-        player.sprite = SheetSprite(psheet, 0);
+        player.sprite = SheetSprite(psheet, 1, "player");
         player.size.x = player.sprite.width;
         player.size.y = player.sprite.height;
         player.modelMatrix.Identity();
@@ -655,9 +681,11 @@ int main(int argc, char *argv[])
             else if(event.type == SDL_KEYUP){
                 if(event.key.keysym.scancode == SDL_SCANCODE_LEFT || event.key.keysym.scancode == SDL_SCANCODE_A){
                     player.acceleration.x = 0.0f;
+                    player.velocity.x = 0.0f;
                 }
                 else if(event.key.keysym.scancode == SDL_SCANCODE_RIGHT || event.key.keysym.scancode == SDL_SCANCODE_D){
                     player.acceleration.x = 0.0f;
+                    player.velocity.x = 0.0f;
                 }
             }
         }
@@ -683,6 +711,16 @@ int main(int argc, char *argv[])
             
         }
         accumulator = elapsed;
+        
+        animationElapsed += elapsed;
+        if(animationElapsed > 1.0/framesPerSecond){
+            currentIndex++;
+            animationElapsed = 0.0;
+            
+            if(currentIndex > numFrames - 1) {
+                currentIndex = 0;
+            }
+        }
         
         Render();
         

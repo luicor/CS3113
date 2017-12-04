@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		6C6BBD101FC35C5F0063CD88 /* p1_spritesheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */; };
-		6C8F4B651FBA15B600CDC273 /* mymap.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6C8F4B641FBA15B600CDC273 /* mymap.txt */; };
+		6C6BBD261FCDF07A0063CD88 /* mymap.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6C6BBD251FCDF07A0063CD88 /* mymap.txt */; };
 		6CBC90581FAFF67A0064342A /* arne_sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CBC90571FAFF67A0064342A /* arne_sprites.png */; };
 		6D5A86AE19AE5C710066C1FD /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D5A86AD19AE5C710066C1FD /* Cocoa.framework */; };
 		6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6D5A86B619AE5C710066C1FD /* InfoPlist.strings */; };
@@ -29,7 +29,7 @@
 /* Begin PBXFileReference section */
 		6C15B0CE1F94901F00D5B32D /* Vector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector.h; path = ../../../../../Desktop/Archive/NYUCodebase/Vector.h; sourceTree = "<group>"; };
 		6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = p1_spritesheet.png; path = "../../../CS3113-Class/assets/graphics/Platformer assets (1330 assets)/Base pack (360 assets)/Player/p1_spritesheet.png"; sourceTree = "<group>"; };
-		6C8F4B641FBA15B600CDC273 /* mymap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = mymap.txt; path = ../../../../../Desktop/mymap.txt; sourceTree = "<group>"; };
+		6C6BBD251FCDF07A0063CD88 /* mymap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mymap.txt; sourceTree = SOURCE_ROOT; };
 		6CBC90571FAFF67A0064342A /* arne_sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = arne_sprites.png; path = "../../../CS3113-Class/assets/sprite_sheets/arne_sprites.png"; sourceTree = "<group>"; };
 		6D5A86AA19AE5C710066C1FD /* NYUCodebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYUCodebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D5A86AD19AE5C710066C1FD /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -161,8 +161,8 @@
 				6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */,
 				6DEF23C01B96CC2600BCE792 /* vertex.glsl */,
 				6C6BBD0F1FC35C5F0063CD88 /* p1_spritesheet.png */,
+				6C6BBD251FCDF07A0063CD88 /* mymap.txt */,
 				6CBC90571FAFF67A0064342A /* arne_sprites.png */,
-				6C8F4B641FBA15B600CDC273 /* mymap.txt */,
 				6D5A86B919AE5C710066C1FD /* main.cpp */,
 			);
 			name = Code;
@@ -222,8 +222,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
+				6C6BBD261FCDF07A0063CD88 /* mymap.txt in Resources */,
 				6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */,
-				6C8F4B651FBA15B600CDC273 /* mymap.txt in Resources */,
 				6CBC90581FAFF67A0064342A /* arne_sprites.png in Resources */,
 				6DE9D2F11BA6AB8C002D599C /* fragment_textured.glsl in Resources */,
 				6D5A86C619AE5C710066C1FD /* Images.xcassets in Resources */,

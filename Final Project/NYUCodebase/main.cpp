@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include "Matrix.h"
 #include "ShaderProgram.h"
 #define STB_IMAGE_IMPLEMENTATION
@@ -32,19 +33,45 @@ using namespace std;
 SDL_Window* displayWindow;
 ShaderProgram program;
 
+void createMap(string input);
+
 GLuint sheet;
+GLuint psheet;
+GLuint esheet;
+GLuint fontTexture;
+
+Mix_Chunk* jump;
+Mix_Music* music1;
+Mix_Music* music2;
+Mix_Music* music3;
+Mix_Music* win;
+Mix_Music* lose;
+Mix_Music* menu;
+
 
 vector<int> solids;
+
+const int runAnimation[] = {1, 2, 3, 4};
+const int numFrames = 4;
+float animationElapsed = 0.0f;
+float framesPerSecond = 50.0f;
+int currentIndex = 0;
+
+const int moveAnimation[] = {1, 2, 3, 4};
+const int eFrames = 4;
+int enemyIndex = 0;
 
 Matrix viewMatrix;
 Matrix mapModelMatrix;
 Matrix mapMVM;
 
-enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL_1, STATE_GAME_LEVEL_2, STATE_GAME_LEVEL_3};
+enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL1, STATE_GAME_LEVEL2, STATE_GAME_LEVEL3, STATE_GAME_WIN};
 
-enum EntityType {ENTITY_PLAYER, ENTITY_COIN, ENTITY_ENEMY};
+enum EntityType {ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_SPIKE, ENTITY_GOAL};
 
-int levelData[mapHeight][mapWidth];
+GameMode mode = STATE_MAIN_MENU;
+
+int levelData[25][90];
 
 
 float lerp(float v0, float v1, float t) {
@@ -93,6 +120,22 @@ public:
         v = (float)(((int)idx) / SPRITE_COUNT_X) / (float) SPRITE_COUNT_Y;
         width = 1.0/(float)SPRITE_COUNT_X;
         height = 1.0/(float)SPRITE_COUNT_Y;
+        size = TILE_SIZE;
+    };
+    
+    SheetSprite(GLuint tID, int idx, string playerID) : textureID(tID), index(idx) {
+        u = (float)(((int)idx) % 7) / (float) 7.0;
+        v = (float)(((int)idx) / 7) / (float) 5.5;
+        width = 1.0/(float)7.0;
+        height = 1.0/(float)5.5;
+        size = TILE_SIZE;
+    };
+    
+    SheetSprite(GLuint tID, int idx, int enemyMarker) : textureID(tID), index(idx) {
+        u = (float)(((int)idx) % 7) / (float) 7.0;
+        v = (float)(((int)idx) / 7) / (float) 3.0;
+        width = 1.0/(float)7.0;
+        height = 1.0/(float)3.0;
         size = TILE_SIZE;
     };
     
@@ -173,6 +216,47 @@ void SheetSprite::DrawUniform(ShaderProgram *program) {
     glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
+void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) {
+    glBindTexture(GL_TEXTURE_2D, fontTexture);
+    float texture_size = 1.0/16.0f;
+    std::vector<float> vertexData;
+    std::vector<float> texCoordData;
+    for(int i=0; i < text.size(); i++) {
+        int spriteIndex = (int)text[i];
+        float texture_x = (float)(spriteIndex % 16) / 16.0f;
+        float texture_y = (float)(spriteIndex / 16) / 16.0f;
+        vertexData.insert(vertexData.end(), {
+            ((size+spacing) * i) + (-0.5f * size), 0.5f * size,
+            ((size+spacing) * i) + (-0.5f * size), -0.5f * size,
+            ((size+spacing) * i) + (0.5f * size), 0.5f * size,
+            ((size+spacing) * i) + (0.5f * size), -0.5f * size,
+            ((size+spacing) * i) + (0.5f * size), 0.5f * size,
+            ((size+spacing) * i) + (-0.5f * size), -0.5f * size,
+        });
+        texCoordData.insert(texCoordData.end(), {
+            texture_x, texture_y,
+            texture_x, texture_y + texture_size,
+            texture_x + texture_size, texture_y,
+            texture_x + texture_size, texture_y + texture_size,
+            texture_x + texture_size, texture_y,
+            texture_x, texture_y + texture_size,
+        });
+    }
+    // draw this data (use the .data() method of std::vector to get pointer to data)
+    
+    glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
+    glEnableVertexAttribArray(program->positionAttribute);
+    
+    glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoordData.data());
+    glEnableVertexAttribArray(program->texCoordAttribute);
+    
+    glDrawArrays(GL_TRIANGLES, 0, text.length()*6.0f);
+    
+    glDisableVertexAttribArray(program->positionAttribute);
+    glDisableVertexAttribArray(program->texCoordAttribute);
+    
+}
+
 class Entity {
 public:
     Entity(){
@@ -208,7 +292,7 @@ public:
     Vector3 friction;
     
     Vector3 penetration;
-
+    
     SheetSprite sprite;
     
     Matrix modelMatrix;
@@ -242,9 +326,13 @@ void Entity::collideTileX(){
     
     //left collision
     worldToTileCoordinates(position.x - (width / 2.0f), position.y, &tileX, &tileY);
+    
     if(isSolid(levelData[tileY][tileX])) {
+        if(entityType == ENTITY_ENEMY){
+            velocity.x = 1.0;
+            acceleration.x = 2.5;
+        }
         collidedLeft = true;
-        velocity.x = 0.0f;
         penetration.x = (position.x - (width / 2)) - (TILE_SIZE * tileX + TILE_SIZE);
         position.x -= (penetration.x - 0.005f);
     }
@@ -256,8 +344,11 @@ void Entity::collideTileX(){
     //right collision
     worldToTileCoordinates(position.x + (width / 2), position.y, &tileX, &tileY);
     if(isSolid(levelData[tileY][tileX])) {
+        if(entityType == ENTITY_ENEMY){
+            velocity.x = -1.0;
+            acceleration.x = -2.5;
+        }
         collidedRight = true;
-        velocity.x = 0.0f;
         penetration.x = (TILE_SIZE * tileX) - (position.x + (width / 2));
         position.x += (penetration.x - 0.005f);
     }
@@ -306,19 +397,33 @@ void Entity::Update(float elapsed) {
     if(entityType == ENTITY_PLAYER) {
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
         if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A]) {
-            acceleration.x = -2.5f;
+            if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
+                acceleration.x = -2.5f;
+                if(collidedBottom == true) {
+                    DrawText(&program, fontTexture, "  MOONWALK", 0.5f, 0.0f);
+                    sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
+                }
+            }
         }
         else if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D]) {
-            acceleration.x = 2.5f;
+            if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
+                acceleration.x = 2.5f;
+                if(collidedBottom == true) {
+                    sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
+                }
+            }
         }
         if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W]) {
-            if (collidedBottom == true) {
-                velocity.y = 5.0f;
+            if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
+                if (collidedBottom == true) {
+                    sprite = SheetSprite(psheet, 13, "player");
+                    Mix_PlayChannel(-1, jump, 0);
+                    velocity.y = 4.8f;
+                }
             }
         }
     }
-    
-    if(velocity.x < 20.0f){
+    if(velocity.x < 30.0f){
         velocity.x += acceleration.x * elapsed;
     }
     velocity.y += acceleration.y * elapsed;
@@ -329,7 +434,7 @@ void Entity::Update(float elapsed) {
     
     position.x += velocity.x * elapsed;
     collideTileX();
-
+    
     if(position.x >= 0.6f) {
         modelMatrix.Identity();
         modelMatrix.Translate(position.x, position.y, 1.0);
@@ -358,54 +463,41 @@ bool Entity::collision(Entity* entity) {
 
 void Entity::CollidesWith(Entity* entity) {
     bool collide = false;
-    if(entity->entityType == ENTITY_COIN) {
+    if(entity->entityType == ENTITY_ENEMY) {
+        collide = collision(entity);
+    }
+    if(entity->entityType == ENTITY_GOAL){
         collide = collision(entity);
     }
     
-    if(collide){
-        entity->render = false;
-        entity->modelMatrix.Identity();
-        entity->modelMatrix.Translate(-2000.0f, -2000.0f, 1.0f);
-        entity->modelviewMatrix = viewMatrix * entity->modelMatrix;
+    if(collide && entity->entityType == ENTITY_GOAL){
+        //PLAYER GOES TO NEXT LEVEL
+        if(mode == STATE_GAME_LEVEL1) {
+            createMap(RESOURCE_FOLDER"level2.txt");
+            mode = STATE_GAME_LEVEL2;
+            Mix_PlayMusic(music2, -1);
+        }
+        else if(mode == STATE_GAME_LEVEL2){
+            createMap(RESOURCE_FOLDER"level3.txt");
+            mode = STATE_GAME_LEVEL3;
+            Mix_PlayMusic(music3, -1);
+        }
+        else if(mode == STATE_GAME_LEVEL3) {
+            mode = STATE_GAME_WIN;
+            Mix_PlayMusic(win, -1);
+        }
+    }
+    else if(collide && (entity->entityType == ENTITY_ENEMY)){
+        //PLAYER DIES GAMEOVER
+        mode = STATE_GAME_OVER;
+        Mix_PlayMusic(lose, -1);
     }
     
 }
 
 Entity player;
-Entity coin;
-
-//bool readHeader(ifstream& stream) {
-//    string line;
-//    mapWidth = -1;
-//    mapHeight = -1;
-//    while(getline(stream, line)) {
-//        if(line == "") {
-//            break;
-//        }
-//
-//        istringstream sStream(line);
-//        string key,value;
-//        getline(sStream, key, '=');
-//        getline(sStream, value);
-//
-//        if(key == "width") {
-//            mapWidth = atoi(value.c_str());
-//        }
-//        else if(key == "height"){
-//            mapHeight = atoi(value.c_str());
-//        }
-//    }
-//    if(mapWidth == -1 || mapHeight == -1) {
-//        return false;
-//    }
-//    else { // allocate our map data
-//        levelData = new int*[mapHeight];
-//        for(int i = 0; i < mapHeight; ++i) {
-//            levelData[i] = new int[mapWidth];
-//        }
-//        return true;
-//    }
-//}
+Entity enemy;
+Entity goal;
 
 bool readLayerData(ifstream& stream) {
     string line;
@@ -437,17 +529,16 @@ bool readLayerData(ifstream& stream) {
     }
     return true;
 }
-
 void placeEntity(string type, float x, float y)
 {
-    if (type == "Player") {
+    if (type == "player") {
         player.entityType = ENTITY_PLAYER;
         player.isStatic = false;
         player.position = Vector3(x, y, 0.0f);
         player.velocity = Vector3(0.0f, 0.0f, 0.0f);
         player.acceleration = Vector3(0.0f, -1.0f, 0.0f);
         player.render = true;
-        player.sprite = SheetSprite(sheet, 98);
+        player.sprite = SheetSprite(psheet, 1, "player");
         player.size.x = player.sprite.width;
         player.size.y = player.sprite.height;
         player.modelMatrix.Identity();
@@ -458,23 +549,41 @@ void placeEntity(string type, float x, float y)
         viewMatrix.Translate(-player.position.x, -player.position.y, 1.0f);
         player.modelviewMatrix = viewMatrix * player.modelMatrix;
     }
-    else {
-        coin.entityType = ENTITY_COIN;
-        coin.isStatic = false;
-        coin.position = Vector3(x, y, 0.0f);
-        coin.velocity = Vector3(0.0f, 0.0f, 0.0f);
-        coin.acceleration = Vector3(0.0f, -1.0f, 0.0f);
-        coin.render = true;
-        coin.sprite = SheetSprite(sheet, 86);
-        coin.size.x = coin.sprite.width;
-        coin.size.y = coin.sprite.height;
-        coin.modelMatrix.Identity();
-        coin.modelMatrix.Translate(x, y, 1.0f);
+    else if(type == "enemy"){
+        enemy.entityType = ENTITY_ENEMY;
+        enemy.isStatic = false;
+        enemy.position = Vector3(x, y, 0.0f);
+        enemy.velocity = Vector3(2.0f, 0.0f, 0.0f);
+        enemy.acceleration = Vector3(1.0f, -1.0f, 0.0f);
+        enemy.render = true;
+        enemy.sprite = SheetSprite(esheet, 1, 1);
+        enemy.size.x = enemy.sprite.width;
+        enemy.size.y = enemy.sprite.height;
+        enemy.modelMatrix.Identity();
+        enemy.modelMatrix.Translate(x, y, 1.0f);
         
         //then move/create modelviewmatrix and setup view matrix
         viewMatrix.Identity();
         viewMatrix.Translate(-player.position.x, -player.position.y, 0.0f);
-        coin.modelviewMatrix = viewMatrix * coin.modelMatrix;
+        enemy.modelviewMatrix = viewMatrix * enemy.modelMatrix;
+    }
+    else if(type == "goal"){
+        goal.entityType = ENTITY_GOAL;
+        goal.isStatic = false;
+        goal.position = Vector3(x, y, 0.0f);
+        goal.velocity = Vector3(0.0f, 0.0f, 0.0f);
+        goal.acceleration = Vector3(0.0f, -1.0f, 0.0f);
+        goal.render = true;
+        goal.sprite = SheetSprite(sheet, 86);
+        goal.size.x = enemy.sprite.width;
+        goal.size.y = enemy.sprite.height;
+        goal.modelMatrix.Identity();
+        goal.modelMatrix.Translate(x, y, 1.0f);
+        
+        //then move/create modelviewmatrix and setup view matrix
+        viewMatrix.Identity();
+        viewMatrix.Translate(-player.position.x, -player.position.y, 0.0f);
+        goal.modelviewMatrix = viewMatrix * goal.modelMatrix;
     }
 }
 
@@ -511,11 +620,6 @@ void createMap(string input)
     ifstream gamedata(input);
     string line;
     while (getline(gamedata, line)) {
-//        if (line == "[header]") {
-//            if(!readHeader(gamedata)) {
-//                assert(false);
-//            }
-//        }
         if (line == "[layer]") {
             readLayerData(gamedata);
         }
@@ -569,35 +673,135 @@ void drawMap(ShaderProgram* program) {
 }
 
 void Update(float elapsed) {
-    cout << player.position.x << endl;
     player.Update(elapsed);
-    player.CollidesWith(&coin);
-    coin.Update(elapsed);
+//    if(abs(enemy.position.x - player.position.x) < 4.0 && abs(enemy.position.y - player.position.y) < 2.0){
+//        enemy.velocity.y = 3.0;
+//    }
+    player.CollidesWith(&enemy);
+    enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
+    enemy.Update(elapsed);
+    player.CollidesWith(&goal);
+    goal.Update(elapsed);
     viewMatrix.Identity();
-//    if(player.position.x < 9.8){
-//        viewMatrix.Translate(-9.8, -player.position.y - 2.0, 0.0f);
-//    }
-//    else if(player.position.x > 45.4) {
-//        viewMatrix.Translate(-45.4, -player.position.y - 2.0, 0.0f);
-//    }
-//    else{
-//        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
-//    }
-    viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
+    if(player.position.x <= 9.8) {
+        viewMatrix.Translate(-9.8 , -player.position.y - 2.0, 0.0f);
+    }
+    else if(player.position.x >= 80.3) {
+        viewMatrix.Translate(-80.3, -player.position.y - 2.0, 0.0f);
+    }
+    else{
+        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
+    }
 }
 
-void Render() {
+void Render1() {
     mapModelMatrix.Identity();
     mapMVM = viewMatrix * mapModelMatrix;
     program.SetModelviewMatrix(mapMVM);
     drawMap(&program);
-    coin.modelviewMatrix = viewMatrix * coin.modelMatrix;
-    program.SetModelviewMatrix(coin.modelviewMatrix);
-    coin.Render(program);
+    enemy.modelviewMatrix = viewMatrix * enemy.modelMatrix;
+    program.SetModelviewMatrix(enemy.modelviewMatrix);
+    enemy.Render(program);
+    goal.modelviewMatrix = viewMatrix * goal.modelMatrix;
+    program.SetModelviewMatrix(goal.modelviewMatrix);
+    goal.Render(program);
     player.modelviewMatrix = viewMatrix * player.modelMatrix;
     program.SetModelviewMatrix(player.modelviewMatrix);
     player.Render(program);
 }
+
+void Render2() {
+    mapModelMatrix.Identity();
+    mapMVM = viewMatrix * mapModelMatrix;
+    program.SetModelviewMatrix(mapMVM);
+    drawMap(&program);
+    enemy.modelviewMatrix = viewMatrix * enemy.modelMatrix;
+    program.SetModelviewMatrix(enemy.modelviewMatrix);
+    enemy.Render(program);
+    goal.modelviewMatrix = viewMatrix * goal.modelMatrix;
+    program.SetModelviewMatrix(goal.modelviewMatrix);
+    goal.Render(program);
+    player.modelviewMatrix = viewMatrix * player.modelMatrix;
+    program.SetModelviewMatrix(player.modelviewMatrix);
+    player.Render(program);
+}
+
+void Render3() {
+    mapModelMatrix.Identity();
+    mapMVM = viewMatrix * mapModelMatrix;
+    program.SetModelviewMatrix(mapMVM);
+    drawMap(&program);
+    enemy.modelviewMatrix = viewMatrix * enemy.modelMatrix;
+    program.SetModelviewMatrix(enemy.modelviewMatrix);
+    enemy.Render(program);
+    goal.modelviewMatrix = viewMatrix * goal.modelMatrix;
+    program.SetModelviewMatrix(goal.modelviewMatrix);
+    goal.Render(program);
+    player.modelviewMatrix = viewMatrix * player.modelMatrix;
+    program.SetModelviewMatrix(player.modelviewMatrix);
+    player.Render(program);
+}
+
+Matrix modelviewMatrix;
+Matrix modelviewMatrix2;
+float begin = -9.60;
+float end = 9.70;
+float currentPos = 0.0;
+
+
+void RenderSelect(float elapsed){
+    switch(mode){
+        case STATE_MAIN_MENU:
+            player.position.x += 0.01;
+            if(player.position.x >= 9.90){
+                player.position.x = -9.90;
+            }
+            player.modelviewMatrix.Identity();
+            player.modelviewMatrix.Translate(player.position.x, -2.8, 0.0f);
+            player.sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
+            program.SetModelviewMatrix(player.modelviewMatrix);
+            player.Render(program);
+            modelviewMatrix.Identity();
+            modelviewMatrix2.Identity();
+            modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+            modelviewMatrix2.Translate(-4.6, -1.2, 0.0);
+            program.SetModelviewMatrix(modelviewMatrix);
+            DrawText(&program, fontTexture, "Space Boy", 1.0f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix2);
+            DrawText(&program, fontTexture, "Press Space to Begin", 0.5f, 0.0f);
+            break;
+        case STATE_GAME_LEVEL1:
+            Render1();
+            break;
+        case STATE_GAME_LEVEL2:
+            Render2();
+            break;
+        case STATE_GAME_LEVEL3:
+            Render3();
+            break;
+        case STATE_GAME_OVER:
+            modelviewMatrix.Identity();
+            modelviewMatrix2.Identity();
+            modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+            modelviewMatrix2.Translate(-4.6, -1.2, 0.0);
+            program.SetModelviewMatrix(modelviewMatrix);
+            DrawText(&program, fontTexture, "YOU LOST!", 1.0f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix2);
+            DrawText(&program, fontTexture, "Press Space to Restart", 0.5f, 0.0f);
+            break;
+        case STATE_GAME_WIN:
+            modelviewMatrix.Identity();
+            modelviewMatrix2.Identity();
+            modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+            modelviewMatrix2.Translate(-6.9, -1.2, 0.0);
+            program.SetModelviewMatrix(modelviewMatrix);
+            DrawText(&program, fontTexture, "YOU WON!", 1.0f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix2);
+            DrawText(&program, fontTexture, "Press Space to Go To Main Menu", 0.5f, 0.0f);
+            break;
+    }
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -609,16 +813,41 @@ int main(int argc, char *argv[])
     
     SDL_GL_MakeCurrent(displayWindow, context);
     
-    #ifdef _WINDOWS
-        glewInit();
-    #endif
+#ifdef _WINDOWS
+    glewInit();
+#endif
     
-    //viewMatrix.Scale(2.0, 2.0, 0.0);
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
+    jump = Mix_LoadWAV(RESOURCE_FOLDER"jump.wav");
+    music1 = Mix_LoadMUS(RESOURCE_FOLDER"music.mp3");
+    music2 = Mix_LoadMUS(RESOURCE_FOLDER"cave.mp3");
+    music3 = Mix_LoadMUS(RESOURCE_FOLDER"night.mp3");
+    win = Mix_LoadMUS(RESOURCE_FOLDER"winner.mp3");
+    lose = Mix_LoadMUS(RESOURCE_FOLDER"lose.mp3");
+    menu = Mix_LoadMUS(RESOURCE_FOLDER"menu.mp3");
     
-    solids = {1,2, 3,  17, 32};
+    Mix_PlayMusic(menu, -1);
+    
+    player.position.x = -9.90;
+    
+    solids = {1, 2, 3, 4, 17, 16, 32, 33, 34};
     
     sheet = LoadTexture(RESOURCE_FOLDER"arne_sprites.png");
+    
+    psheet = LoadTexture(RESOURCE_FOLDER"p1_spritesheet.png");
+    
+    esheet = LoadTexture(RESOURCE_FOLDER"p3_spritesheet.png");
+    
+    fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+    
+    //Main Menu modelview Matrices
+    modelviewMatrix.Identity();
+    modelviewMatrix2.Identity();
+    modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+    modelviewMatrix2.Translate(-4.6, -1.2, 0.0);
+    fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
 
+    
     ShaderProgram p(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
     program = p;
     
@@ -628,9 +857,6 @@ int main(int argc, char *argv[])
     glViewport(0, 0, 640, 360);
     Matrix projectionMatrix;
     projectionMatrix.SetOrthoProjection(-9.55f, 9.55f, -4.0f, 4.0f, -1.0f, 1.0f);
-    
-    
-    createMap(RESOURCE_FOLDER"level1.txt");
     
     
     //Initalize Time Variables
@@ -644,17 +870,55 @@ int main(int argc, char *argv[])
             if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                 done = true;
             }
+            else if (event.type == SDL_KEYDOWN){
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                    if(mode != STATE_MAIN_MENU) {
+                        mode = STATE_MAIN_MENU;
+                        Mix_PlayMusic(menu, -1);
+                    }
+                    else{
+                        done = true;
+                    }
+                }
+                else if(event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+                    if(mode == STATE_MAIN_MENU) {
+                        createMap(RESOURCE_FOLDER"level1.txt");
+                        mode = STATE_GAME_LEVEL1;
+                        Mix_PlayMusic(music1, -1);
+                    }
+                    else if(mode == STATE_GAME_OVER || mode == STATE_GAME_WIN) {
+                        mode = STATE_MAIN_MENU;
+                        Mix_PlayMusic(menu, -1);
+                    }
+                }
+            }
             else if(event.type == SDL_KEYUP){
                 if(event.key.keysym.scancode == SDL_SCANCODE_LEFT || event.key.keysym.scancode == SDL_SCANCODE_A){
-                    player.acceleration.x = 0.0f;
+                    if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
+                        player.acceleration.x = 0.0f;
+                        player.velocity.x = 0.0f;
+                    }
                 }
                 else if(event.key.keysym.scancode == SDL_SCANCODE_RIGHT || event.key.keysym.scancode == SDL_SCANCODE_D){
-                    player.acceleration.x = 0.0f;
+                    if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
+                        player.acceleration.x = 0.0f;
+                        player.velocity.x = 0.0f;
+                    }
                 }
             }
         }
         
         glClear(GL_COLOR_BUFFER_BIT);
+        
+        if(mode == STATE_GAME_LEVEL1) {
+            glClearColor(0.0f, 0.5f, 1.0f, 1.0f);
+        }
+        else if(mode == STATE_GAME_LEVEL3){
+            glClearColor(0.3f, 0.0f, 1.0f, 1.0f);
+        }
+        else{
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        }
         
         glUseProgram(program.programID);
         
@@ -672,14 +936,35 @@ int main(int argc, char *argv[])
         while(elapsed >= FIXED_TIMESTEP) {
             Update(FIXED_TIMESTEP);
             elapsed -= FIXED_TIMESTEP;
+            animationElapsed += elapsed;
+            if(animationElapsed > 1.0/framesPerSecond){
+                currentIndex++;
+                enemyIndex++;
+                animationElapsed = 0.0;
+                
+                if(currentIndex > numFrames - 1) {
+                    currentIndex = 0;
+                }
+                if(enemyIndex > eFrames - 1) {
+                    enemyIndex = 0;
+                }
+            }
             
         }
         accumulator = elapsed;
         
-        Render();
+        RenderSelect(elapsed);
         
         SDL_GL_SwapWindow(displayWindow);
     }
+    
+    Mix_FreeChunk(jump);
+    Mix_FreeMusic(music1);
+    Mix_FreeMusic(music2);
+    Mix_FreeMusic(music3);
+    Mix_FreeMusic(menu);
+    Mix_FreeMusic(lose);
+    Mix_FreeMusic(win);
     
     SDL_Quit();
     return 0;
