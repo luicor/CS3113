@@ -38,6 +38,7 @@ void createMap(string input);
 GLuint sheet;
 GLuint psheet;
 GLuint esheet;
+GLuint angry;
 GLuint fontTexture;
 
 Mix_Chunk* jump;
@@ -60,6 +61,10 @@ int currentIndex = 0;
 const int moveAnimation[] = {1, 2, 3, 4};
 const int eFrames = 4;
 int enemyIndex = 0;
+float timer = 0.0;
+
+int oldTileX = 0;
+int oldTileY = 0;
 
 Matrix viewMatrix;
 Matrix mapModelMatrix;
@@ -67,7 +72,7 @@ Matrix mapMVM;
 
 enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL1, STATE_GAME_LEVEL2, STATE_GAME_LEVEL3, STATE_GAME_WIN};
 
-enum EntityType {ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_SPIKE, ENTITY_GOAL};
+enum EntityType {ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_GOAL};
 
 GameMode mode = STATE_MAIN_MENU;
 
@@ -379,6 +384,10 @@ void Entity::collideTileY(){
     worldToTileCoordinates(position.x, position.y - (height / 2), &tileX, &tileY);
     if(isSolid(levelData[tileY][tileX])) {
         collidedBottom = true;
+        if(entityType == ENTITY_PLAYER)
+        if(tileX != oldTileX){
+            sprite = SheetSprite(psheet, 1, "player");
+        }
         velocity.y = 0.0f;
         acceleration.y = 0.0f;
         penetration.y = (-TILE_SIZE * tileY) - (position.y - (height / 2));
@@ -388,6 +397,8 @@ void Entity::collideTileY(){
         collidedBottom = false;
         acceleration.y = -5.0f;
     }
+    oldTileX = tileX;
+    oldTileY = tileY;
 }
 
 void Entity::Update(float elapsed) {
@@ -476,21 +487,25 @@ void Entity::CollidesWith(Entity* entity) {
             createMap(RESOURCE_FOLDER"level2.txt");
             mode = STATE_GAME_LEVEL2;
             Mix_PlayMusic(music2, -1);
+            timer = 0.0;
         }
         else if(mode == STATE_GAME_LEVEL2){
             createMap(RESOURCE_FOLDER"level3.txt");
             mode = STATE_GAME_LEVEL3;
             Mix_PlayMusic(music3, -1);
+            timer = 0.0;
         }
         else if(mode == STATE_GAME_LEVEL3) {
             mode = STATE_GAME_WIN;
             Mix_PlayMusic(win, -1);
+            timer = 0.0;
         }
     }
     else if(collide && (entity->entityType == ENTITY_ENEMY)){
         //PLAYER DIES GAMEOVER
         mode = STATE_GAME_OVER;
         Mix_PlayMusic(lose, -1);
+        timer = 0.0;
     }
     
 }
@@ -674,11 +689,36 @@ void drawMap(ShaderProgram* program) {
 
 void Update(float elapsed) {
     player.Update(elapsed);
+    player.CollidesWith(&enemy);
 //    if(abs(enemy.position.x - player.position.x) < 4.0 && abs(enemy.position.y - player.position.y) < 2.0){
 //        enemy.velocity.y = 3.0;
+//        enemy.collidedBottom = false;
+//    }
+//    if(enemy.collidedBottom == true){
+//        player.CollidesWith(&enemy);
 //    }
     player.CollidesWith(&enemy);
-    enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
+    if(abs(enemy.position.x - player.position.x) < 6.0 && abs(enemy.position.y - player.position.y) < 4.0){
+        enemy.sprite = SheetSprite(angry, moveAnimation[enemyIndex], 0);
+        if(enemy.acceleration.x > 0.0){
+            enemy.acceleration.x = 5.0;
+        }
+        else{
+            enemy.acceleration.x = -5.0;
+        }
+    }
+    else{
+        enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
+        if(enemy.acceleration.x > 0.0){
+            enemy.velocity.x = 1.5;
+            enemy.acceleration.x = 2.5;
+        }
+        else{
+            enemy.velocity.x = -1.5;
+            enemy.acceleration.x = -2.5;
+        }
+    }
+    //enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
     enemy.Update(elapsed);
     player.CollidesWith(&goal);
     goal.Update(elapsed);
@@ -744,9 +784,6 @@ void Render3() {
 
 Matrix modelviewMatrix;
 Matrix modelviewMatrix2;
-float begin = -9.60;
-float end = 9.70;
-float currentPos = 0.0;
 
 
 void RenderSelect(float elapsed){
@@ -769,14 +806,36 @@ void RenderSelect(float elapsed){
             DrawText(&program, fontTexture, "Space Boy", 1.0f, 0.0f);
             program.SetModelviewMatrix(modelviewMatrix2);
             DrawText(&program, fontTexture, "Press Space to Begin", 0.5f, 0.0f);
+            timer = 0.0;
             break;
         case STATE_GAME_LEVEL1:
+            timer += elapsed;
+            if(timer < 0.37){
+                modelviewMatrix.Identity();
+                modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+                program.SetModelviewMatrix(modelviewMatrix);
+                DrawText(&program, fontTexture, "LEVEL 1", 1.0f, 0.0f);
+            }
             Render1();
             break;
         case STATE_GAME_LEVEL2:
+            timer += elapsed;
+            if(timer < 0.37){
+                modelviewMatrix.Identity();
+                modelviewMatrix.Translate(-4.0, 0.0, 0.0);
+                program.SetModelviewMatrix(modelviewMatrix);
+                DrawText(&program, fontTexture, "LEVEL 2", 1.0f, 0.0f);
+            }
             Render2();
             break;
         case STATE_GAME_LEVEL3:
+            timer += elapsed;
+            if(timer < 0.37){
+                modelviewMatrix.Identity();
+                modelviewMatrix.Translate(-4.0, 1.5, 0.0);
+                program.SetModelviewMatrix(modelviewMatrix);
+                DrawText(&program, fontTexture, "LEVEL 3", 1.0f, 0.0f);
+            }
             Render3();
             break;
         case STATE_GAME_OVER:
@@ -836,7 +895,9 @@ int main(int argc, char *argv[])
     
     psheet = LoadTexture(RESOURCE_FOLDER"p1_spritesheet.png");
     
-    esheet = LoadTexture(RESOURCE_FOLDER"p3_spritesheet.png");
+    angry = LoadTexture(RESOURCE_FOLDER"p3_spritesheet.png");
+    
+    esheet = LoadTexture(RESOURCE_FOLDER"p2_spritesheet.png");
     
     fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
     
@@ -866,6 +927,7 @@ int main(int argc, char *argv[])
     SDL_Event event;
     bool done = false;
     while (!done) {
+        cout << timer << endl;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                 done = true;
