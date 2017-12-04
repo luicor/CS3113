@@ -40,6 +40,7 @@ GLuint psheet;
 GLuint esheet;
 GLuint angry;
 GLuint fontTexture;
+GLuint bg;
 
 Mix_Chunk* jump;
 Mix_Chunk* select;
@@ -64,8 +65,6 @@ const int eFrames = 4;
 int enemyIndex = 0;
 float timer = 0.0;
 
-int oldTileX = 0;
-int oldTileY = 0;
 
 Matrix viewMatrix;
 Matrix mapModelMatrix;
@@ -76,6 +75,7 @@ enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL1, STATE_GAME_
 enum EntityType {ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_GOAL};
 
 GameMode mode = STATE_MAIN_MENU;
+
 
 int levelData[25][90];
 
@@ -263,6 +263,38 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
     
 }
 
+void drawBackground(ShaderProgram* program, GLuint texture)
+{
+    glBindTexture(GL_TEXTURE_2D, texture);
+    float vertices[] = {
+        -10.0f, 5.0f,  // Triangle 1 Coord A
+        -10.0f, -5.0f, // Triangle 1 Coord B
+        10.0f, -5.0f,   // Triangle 1 Coord C
+        -10.0f, 5.0f,   // Triangle 2 Coord A
+        10.0f, -5.0f, // Triangle 2 Coord B
+        10.0f, 5.0f   // Triangle 2 Coord C
+    };
+    
+    
+    float texCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+    };
+    glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+    glEnableVertexAttribArray(program->positionAttribute);
+    
+    glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+    glEnableVertexAttribArray(program->texCoordAttribute);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glDisableVertexAttribArray(program->positionAttribute);
+    glDisableVertexAttribArray(program->texCoordAttribute);
+}
+
 class Entity {
 public:
     Entity(){
@@ -385,11 +417,6 @@ void Entity::collideTileY(){
     worldToTileCoordinates(position.x, position.y - (height / 2), &tileX, &tileY);
     if(isSolid(levelData[tileY][tileX])) {
         collidedBottom = true;
-        if(entityType == ENTITY_PLAYER){
-            if(tileX != oldTileX){
-                sprite = SheetSprite(psheet, 1, "player");
-            }
-        }
         velocity.y = 0.0f;
         acceleration.y = 0.0f;
         penetration.y = (-TILE_SIZE * tileY) - (position.y - (height / 2));
@@ -399,8 +426,6 @@ void Entity::collideTileY(){
         collidedBottom = false;
         acceleration.y = -5.0f;
     }
-    oldTileX = tileX;
-    oldTileY = tileY;
 }
 
 void Entity::Update(float elapsed) {
@@ -411,7 +436,7 @@ void Entity::Update(float elapsed) {
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
         if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A]) {
             if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
-                acceleration.x = -2.5f;
+                acceleration.x = -3.5f;
                 if(collidedBottom == true) {
                     DrawText(&program, fontTexture, "  MOONWALK", 0.5f, 0.0f);
                     sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
@@ -420,7 +445,7 @@ void Entity::Update(float elapsed) {
         }
         else if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D]) {
             if(mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3){
-                acceleration.x = 2.5f;
+                acceleration.x = 3.5f;
                 if(collidedBottom == true) {
                     sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
                 }
@@ -436,7 +461,7 @@ void Entity::Update(float elapsed) {
             }
         }
     }
-    if(velocity.x < 30.0f){
+    if(velocity.x < 40.0f){
         velocity.x += acceleration.x * elapsed;
     }
     velocity.y += acceleration.y * elapsed;
@@ -693,13 +718,6 @@ void Update(float elapsed) {
     if(mode != STATE_PAUSE){
         player.Update(elapsed);
         player.CollidesWith(&enemy);
-        //    if(abs(enemy.position.x - player.position.x) < 4.0 && abs(enemy.position.y - player.position.y) < 2.0){
-        //        enemy.velocity.y = 3.0;
-        //        enemy.collidedBottom = false;
-        //    }
-        //    if(enemy.collidedBottom == true){
-        //        player.CollidesWith(&enemy);
-        //    }
         player.CollidesWith(&enemy);
         if(abs(enemy.position.x - player.position.x) < 6.0 && abs(enemy.position.y - player.position.y) < 4.0){
             enemy.sprite = SheetSprite(angry, moveAnimation[enemyIndex], 0);
@@ -792,11 +810,14 @@ Matrix modelviewMatrix2;
 Matrix modelviewMatrix3;
 Matrix modelviewMatrix4;
 Matrix modelviewMatrix5;
-
+Matrix bgMVM;
 
 void RenderSelect(float elapsed){
     switch(mode){
         case STATE_MAIN_MENU:
+            bgMVM.Identity();
+            program.SetModelviewMatrix(bgMVM);
+            drawBackground(&program, bg);
             player.position.x += 0.01;
             if(player.position.x >= 9.90){
                 player.position.x = -9.90;
@@ -821,6 +842,9 @@ void RenderSelect(float elapsed){
             timer = 0.0;
             break;
         case STATE_MANUAL:
+            bgMVM.Identity();
+            program.SetModelviewMatrix(bgMVM);
+            drawBackground(&program, bg);
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
             modelviewMatrix3.Identity();
@@ -843,6 +867,9 @@ void RenderSelect(float elapsed){
             DrawText(&program, fontTexture, "Press Space to Return to Main Menu", 0.35f, 0.0f);
             break;
         case STATE_PAUSE:
+            bgMVM.Identity();
+            program.SetModelviewMatrix(bgMVM);
+            drawBackground(&program, bg);
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
             modelviewMatrix3.Identity();
@@ -887,6 +914,9 @@ void RenderSelect(float elapsed){
             Render3();
             break;
         case STATE_GAME_OVER:
+            bgMVM.Identity();
+            program.SetModelviewMatrix(bgMVM);
+            drawBackground(&program, bg);
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
             modelviewMatrix.Translate(-4.0, 1.5, 0.0);
@@ -897,6 +927,9 @@ void RenderSelect(float elapsed){
             DrawText(&program, fontTexture, "Press Space to Restart", 0.5f, 0.0f);
             break;
         case STATE_GAME_WIN:
+            bgMVM.Identity();
+            program.SetModelviewMatrix(bgMVM);
+            drawBackground(&program, bg);
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
             modelviewMatrix.Translate(-4.0, 1.5, 0.0);
@@ -949,6 +982,8 @@ int main(int argc, char *argv[])
     esheet = LoadTexture(RESOURCE_FOLDER"p2_spritesheet.png");
     
     fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+    
+    bg =LoadTexture(RESOURCE_FOLDER"starBackground.png");
     
     //Main Menu modelview Matrices
     modelviewMatrix.Identity();

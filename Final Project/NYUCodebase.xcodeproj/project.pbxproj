@@ -16,6 +16,8 @@
 		6C27C2841FD4FC0000B4F699 /* menu.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6C27C2831FD4FC0000B4F699 /* menu.mp3 */; };
 		6C27C2861FD5A8D300B4F699 /* p2_spritesheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C27C2851FD5A8D200B4F699 /* p2_spritesheet.png */; };
 		6C27C2881FD5B9EC00B4F699 /* select.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6C27C2871FD5B9EC00B4F699 /* select.wav */; };
+		6C27C28A1FD5D4D900B4F699 /* starBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C27C2891FD5D4D800B4F699 /* starBackground.png */; };
+		6C27C28C1FD6111F00B4F699 /* land.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6C27C28B1FD6111E00B4F699 /* land.wav */; };
 		6C6BBD201FCDC2730063CD88 /* SDL2_mixer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C6BBD1F1FCDC2730063CD88 /* SDL2_mixer.framework */; };
 		6C6BBD221FCDC3CA0063CD88 /* p1_spritesheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C6BBD211FCDC3CA0063CD88 /* p1_spritesheet.png */; };
 		6C6BBD241FCDC3D70063CD88 /* jump.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6C6BBD231FCDC3D70063CD88 /* jump.wav */; };
@@ -52,6 +54,8 @@
 		6C27C2831FD4FC0000B4F699 /* menu.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = menu.mp3; sourceTree = SOURCE_ROOT; };
 		6C27C2851FD5A8D200B4F699 /* p2_spritesheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = p2_spritesheet.png; sourceTree = SOURCE_ROOT; };
 		6C27C2871FD5B9EC00B4F699 /* select.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = select.wav; sourceTree = SOURCE_ROOT; };
+		6C27C2891FD5D4D800B4F699 /* starBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = starBackground.png; sourceTree = SOURCE_ROOT; };
+		6C27C28B1FD6111E00B4F699 /* land.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = land.wav; sourceTree = SOURCE_ROOT; };
 		6C6BBD1F1FCDC2730063CD88 /* SDL2_mixer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_mixer.framework; path = ../../../../../../Library/Frameworks/SDL2_mixer.framework; sourceTree = "<group>"; };
 		6C6BBD211FCDC3CA0063CD88 /* p1_spritesheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = p1_spritesheet.png; sourceTree = SOURCE_ROOT; };
 		6C6BBD231FCDC3D70063CD88 /* jump.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = jump.wav; sourceTree = SOURCE_ROOT; };
@@ -198,6 +202,7 @@
 				6C7A765F1FCF8D6E0084682C /* level1.txt */,
 				6C7A76611FCF92F30084682C /* level2.txt */,
 				6C7A76631FCF96A30084682C /* level3.txt */,
+				6C27C28B1FD6111E00B4F699 /* land.wav */,
 				6C6BBD231FCDC3D70063CD88 /* jump.wav */,
 				6C27C2791FD4FA4F00B4F699 /* night.mp3 */,
 				6C27C27B1FD4FA6300B4F699 /* cave.mp3 */,
@@ -206,6 +211,7 @@
 				6C27C2811FD4FA9E00B4F699 /* lose.mp3 */,
 				6C27C2831FD4FC0000B4F699 /* menu.mp3 */,
 				6C27C2871FD5B9EC00B4F699 /* select.wav */,
+				6C27C2891FD5D4D800B4F699 /* starBackground.png */,
 				6C7A765D1FCF75D80084682C /* pixel_font.png */,
 				6C27C2851FD5A8D200B4F699 /* p2_spritesheet.png */,
 				6C27C2771FD4F2A700B4F699 /* p3_spritesheet.png */,
@@ -270,6 +276,7 @@
 				6C7A76601FCF8D6E0084682C /* level1.txt in Resources */,
 				6C6BBD241FCDC3D70063CD88 /* jump.wav in Resources */,
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
+				6C27C28C1FD6111F00B4F699 /* land.wav in Resources */,
 				6C27C2841FD4FC0000B4F699 /* menu.mp3 in Resources */,
 				6C27C27E1FD4FA6900B4F699 /* music.mp3 in Resources */,
 				6C27C2781FD4F2A700B4F699 /* p3_spritesheet.png in Resources */,
@@ -284,6 +291,7 @@
 				6C7A76621FCF92F30084682C /* level2.txt in Resources */,
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
 				6C27C27C1FD4FA6300B4F699 /* cave.mp3 in Resources */,
+				6C27C28A1FD5D4D900B4F699 /* starBackground.png in Resources */,
 				6C7A76641FCF96A30084682C /* level3.txt in Resources */,
 				6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */,
 				6C27C27A1FD4FA4F00B4F699 /* night.mp3 in Resources */,
