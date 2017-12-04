@@ -42,6 +42,7 @@ GLuint angry;
 GLuint fontTexture;
 
 Mix_Chunk* jump;
+Mix_Chunk* select;
 Mix_Music* music1;
 Mix_Music* music2;
 Mix_Music* music3;
@@ -70,7 +71,7 @@ Matrix viewMatrix;
 Matrix mapModelMatrix;
 Matrix mapMVM;
 
-enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL1, STATE_GAME_LEVEL2, STATE_GAME_LEVEL3, STATE_GAME_WIN};
+enum GameMode { STATE_MAIN_MENU, STATE_GAME_OVER, STATE_GAME_LEVEL1, STATE_GAME_LEVEL2, STATE_GAME_LEVEL3, STATE_GAME_WIN, STATE_MANUAL, STATE_PAUSE};
 
 enum EntityType {ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_GOAL};
 
@@ -384,9 +385,10 @@ void Entity::collideTileY(){
     worldToTileCoordinates(position.x, position.y - (height / 2), &tileX, &tileY);
     if(isSolid(levelData[tileY][tileX])) {
         collidedBottom = true;
-        if(entityType == ENTITY_PLAYER)
-        if(tileX != oldTileX){
-            sprite = SheetSprite(psheet, 1, "player");
+        if(entityType == ENTITY_PLAYER){
+            if(tileX != oldTileX){
+                sprite = SheetSprite(psheet, 1, "player");
+            }
         }
         velocity.y = 0.0f;
         acceleration.y = 0.0f;
@@ -688,50 +690,53 @@ void drawMap(ShaderProgram* program) {
 }
 
 void Update(float elapsed) {
-    player.Update(elapsed);
-    player.CollidesWith(&enemy);
-//    if(abs(enemy.position.x - player.position.x) < 4.0 && abs(enemy.position.y - player.position.y) < 2.0){
-//        enemy.velocity.y = 3.0;
-//        enemy.collidedBottom = false;
-//    }
-//    if(enemy.collidedBottom == true){
-//        player.CollidesWith(&enemy);
-//    }
-    player.CollidesWith(&enemy);
-    if(abs(enemy.position.x - player.position.x) < 6.0 && abs(enemy.position.y - player.position.y) < 4.0){
-        enemy.sprite = SheetSprite(angry, moveAnimation[enemyIndex], 0);
-        if(enemy.acceleration.x > 0.0){
-            enemy.acceleration.x = 5.0;
+    if(mode != STATE_PAUSE){
+        player.Update(elapsed);
+        player.CollidesWith(&enemy);
+        //    if(abs(enemy.position.x - player.position.x) < 4.0 && abs(enemy.position.y - player.position.y) < 2.0){
+        //        enemy.velocity.y = 3.0;
+        //        enemy.collidedBottom = false;
+        //    }
+        //    if(enemy.collidedBottom == true){
+        //        player.CollidesWith(&enemy);
+        //    }
+        player.CollidesWith(&enemy);
+        if(abs(enemy.position.x - player.position.x) < 6.0 && abs(enemy.position.y - player.position.y) < 4.0){
+            enemy.sprite = SheetSprite(angry, moveAnimation[enemyIndex], 0);
+            if(enemy.acceleration.x > 0.0){
+                enemy.acceleration.x = 5.0;
+            }
+            else{
+                enemy.acceleration.x = -5.0;
+            }
         }
         else{
-            enemy.acceleration.x = -5.0;
+            enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
+            if(enemy.acceleration.x > 0.0){
+                enemy.velocity.x = 1.5;
+                enemy.acceleration.x = 2.5;
+            }
+            else{
+                enemy.velocity.x = -1.5;
+                enemy.acceleration.x = -2.5;
+            }
         }
-    }
-    else{
-        enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
-        if(enemy.acceleration.x > 0.0){
-            enemy.velocity.x = 1.5;
-            enemy.acceleration.x = 2.5;
+        //enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
+        enemy.Update(elapsed);
+        player.CollidesWith(&goal);
+        goal.Update(elapsed);
+        viewMatrix.Identity();
+        if(player.position.x <= 9.8) {
+            viewMatrix.Translate(-9.8 , -player.position.y - 2.0, 0.0f);
+        }
+        else if(player.position.x >= 80.3) {
+            viewMatrix.Translate(-80.3, -player.position.y - 2.0, 0.0f);
         }
         else{
-            enemy.velocity.x = -1.5;
-            enemy.acceleration.x = -2.5;
+            viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
         }
     }
-    //enemy.sprite = SheetSprite(esheet, moveAnimation[enemyIndex], 0);
-    enemy.Update(elapsed);
-    player.CollidesWith(&goal);
-    goal.Update(elapsed);
-    viewMatrix.Identity();
-    if(player.position.x <= 9.8) {
-        viewMatrix.Translate(-9.8 , -player.position.y - 2.0, 0.0f);
-    }
-    else if(player.position.x >= 80.3) {
-        viewMatrix.Translate(-80.3, -player.position.y - 2.0, 0.0f);
-    }
-    else{
-        viewMatrix.Translate(-player.position.x, -player.position.y - 2.0, 0.0f);
-    }
+    
 }
 
 void Render1() {
@@ -784,6 +789,9 @@ void Render3() {
 
 Matrix modelviewMatrix;
 Matrix modelviewMatrix2;
+Matrix modelviewMatrix3;
+Matrix modelviewMatrix4;
+Matrix modelviewMatrix5;
 
 
 void RenderSelect(float elapsed){
@@ -794,19 +802,59 @@ void RenderSelect(float elapsed){
                 player.position.x = -9.90;
             }
             player.modelviewMatrix.Identity();
-            player.modelviewMatrix.Translate(player.position.x, -2.8, 0.0f);
+            player.modelviewMatrix.Translate(player.position.x, -3.0, 0.0f);
             player.sprite = SheetSprite(psheet, runAnimation[currentIndex], "player");
             program.SetModelviewMatrix(player.modelviewMatrix);
             player.Render(program);
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
+            modelviewMatrix3.Identity();
             modelviewMatrix.Translate(-4.0, 1.5, 0.0);
             modelviewMatrix2.Translate(-4.6, -1.2, 0.0);
+            modelviewMatrix3.Translate(-4.45, -2.2, 0.0);
             program.SetModelviewMatrix(modelviewMatrix);
             DrawText(&program, fontTexture, "Space Boy", 1.0f, 0.0f);
             program.SetModelviewMatrix(modelviewMatrix2);
             DrawText(&program, fontTexture, "Press Space to Begin", 0.5f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix3);
+            DrawText(&program, fontTexture, "Press I to See Instructions", 0.35f, 0.0f);
             timer = 0.0;
+            break;
+        case STATE_MANUAL:
+            modelviewMatrix.Identity();
+            modelviewMatrix2.Identity();
+            modelviewMatrix3.Identity();
+            modelviewMatrix4.Identity();
+            modelviewMatrix5.Identity();
+            modelviewMatrix.Translate(-5.5, 3.0, 0.0);
+            modelviewMatrix2.Translate(-9.0, 1.5, 0.0);
+            modelviewMatrix3.Translate(0.0, 1.5, 0.0);
+            modelviewMatrix4.Translate(-9.0, 0.0, 0.0);
+            modelviewMatrix5.Translate(-5.5, -3.0, 0.0);
+            program.SetModelviewMatrix(modelviewMatrix);
+            DrawText(&program, fontTexture, "INSTRUCTIONS", 1.0f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix2);
+            DrawText(&program, fontTexture, "A or Left - Move Left", 0.35f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix3);
+            DrawText(&program, fontTexture, "D or Right - Move Right", 0.35f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix4);
+            DrawText(&program, fontTexture, "W or Up - Jump", 0.35f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix5);
+            DrawText(&program, fontTexture, "Press Space to Return to Main Menu", 0.35f, 0.0f);
+            break;
+        case STATE_PAUSE:
+            modelviewMatrix.Identity();
+            modelviewMatrix2.Identity();
+            modelviewMatrix3.Identity();
+            modelviewMatrix.Translate(-5.15, 0.2, 0.0);
+            modelviewMatrix2.Translate(-5.35, -1.2, 0.0);
+            modelviewMatrix3.Translate(-4.0, 2.5, 0.0);
+            program.SetModelviewMatrix(modelviewMatrix);
+            DrawText(&program, fontTexture, "Press Space to Resume", 0.5f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix2);
+            DrawText(&program, fontTexture, "Press Esc to Main Menu", 0.5f, 0.0f);
+            program.SetModelviewMatrix(modelviewMatrix3);
+            DrawText(&program, fontTexture, "PAUSED", 1.5f, 0.0f);
             break;
         case STATE_GAME_LEVEL1:
             timer += elapsed;
@@ -842,7 +890,7 @@ void RenderSelect(float elapsed){
             modelviewMatrix.Identity();
             modelviewMatrix2.Identity();
             modelviewMatrix.Translate(-4.0, 1.5, 0.0);
-            modelviewMatrix2.Translate(-4.6, -1.2, 0.0);
+            modelviewMatrix2.Translate(-4.7, -1.2, 0.0);
             program.SetModelviewMatrix(modelviewMatrix);
             DrawText(&program, fontTexture, "YOU LOST!", 1.0f, 0.0f);
             program.SetModelviewMatrix(modelviewMatrix2);
@@ -878,6 +926,7 @@ int main(int argc, char *argv[])
     
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
     jump = Mix_LoadWAV(RESOURCE_FOLDER"jump.wav");
+    select = Mix_LoadWAV(RESOURCE_FOLDER"select.wav");
     music1 = Mix_LoadMUS(RESOURCE_FOLDER"music.mp3");
     music2 = Mix_LoadMUS(RESOURCE_FOLDER"cave.mp3");
     music3 = Mix_LoadMUS(RESOURCE_FOLDER"night.mp3");
@@ -923,6 +972,7 @@ int main(int argc, char *argv[])
     //Initalize Time Variables
     float lastFrameTicks = 0.0f;
     float accumulator = 0.0f;
+    GameMode oldMode = mode;
     
     SDL_Event event;
     bool done = false;
@@ -934,7 +984,16 @@ int main(int argc, char *argv[])
             }
             else if (event.type == SDL_KEYDOWN){
                 if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
-                    if(mode != STATE_MAIN_MENU) {
+                    if(mode != STATE_PAUSE && (mode == STATE_GAME_LEVEL1 || mode == STATE_GAME_LEVEL2 || mode == STATE_GAME_LEVEL3)) {
+                        Mix_PlayChannel(-1, select, 0);
+                        if(Mix_PlayingMusic() == 1){
+                            Mix_PauseMusic();
+                        }
+                        oldMode = mode;
+                        mode = STATE_PAUSE;
+                    }
+                    else if(mode != STATE_MAIN_MENU && mode == STATE_PAUSE){
+                        Mix_PlayChannel(-1, select, 0);
                         mode = STATE_MAIN_MENU;
                         Mix_PlayMusic(menu, -1);
                     }
@@ -946,10 +1005,23 @@ int main(int argc, char *argv[])
                     if(mode == STATE_MAIN_MENU) {
                         createMap(RESOURCE_FOLDER"level1.txt");
                         mode = STATE_GAME_LEVEL1;
+                        Mix_PlayChannel(-1, select, 0);
                         Mix_PlayMusic(music1, -1);
                     }
-                    else if(mode == STATE_GAME_OVER || mode == STATE_GAME_WIN) {
+                    else if(mode == STATE_GAME_OVER || mode == STATE_GAME_WIN ||  mode == STATE_MANUAL) {
                         mode = STATE_MAIN_MENU;
+                        Mix_PlayChannel(-1, select, 0);
+                        Mix_PlayMusic(menu, -1);
+                    }
+                    else if(mode == STATE_PAUSE){
+                        Mix_ResumeMusic();
+                        mode = oldMode;
+                    }
+                }
+                else if(event.key.keysym.scancode == SDL_SCANCODE_I){
+                    if(mode == STATE_MAIN_MENU){
+                        mode = STATE_MANUAL;
+                        Mix_PlayChannel(-1, select, 0);
                         Mix_PlayMusic(menu, -1);
                     }
                 }
