@@ -1057,7 +1057,6 @@ int main(int argc, char *argv[])
                     if(mode == STATE_MAIN_MENU){
                         mode = STATE_MANUAL;
                         Mix_PlayChannel(-1, select, 0);
-                        Mix_PlayMusic(menu, -1);
                     }
                 }
             }
