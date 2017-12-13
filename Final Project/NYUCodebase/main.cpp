@@ -1059,6 +1059,25 @@ int main(int argc, char *argv[])
                         Mix_PlayChannel(-1, select, 0);
                     }
                 }
+                else if(event.key.keysym.scancode == SDL_SCANCODE_0){
+                    if(mode == STATE_GAME_LEVEL1){
+                        mode = STATE_GAME_LEVEL2;
+                        createMap(RESOURCE_FOLDER"level2.txt");
+                        Mix_PlayMusic(music2, -1);
+                        timer = 0.0;
+                    }
+                    else if(mode == STATE_GAME_LEVEL2){
+                        mode = STATE_GAME_LEVEL3;
+                        createMap(RESOURCE_FOLDER"level3.txt");
+                        Mix_PlayMusic(music3, -1);
+                        timer = 0.0;
+                    }
+                    else if(mode == STATE_GAME_LEVEL3){
+                        mode = STATE_GAME_WIN;
+                        Mix_PlayMusic(win, -1);
+                        timer = 0.0;
+                    }
+                }
             }
             else if(event.type == SDL_KEYUP){
                 if(event.key.keysym.scancode == SDL_SCANCODE_LEFT || event.key.keysym.scancode == SDL_SCANCODE_A){
